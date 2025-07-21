@@ -1,0 +1,105 @@
+.messages-layout {
+    padding: 2rem;
+}
+
+.inbox-container, .message-detail-container, .compose-container {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.inbox-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.inbox-header h2 {
+    margin: 0;
+}
+
+.message-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.message-list li {
+    border-bottom: 1px solid #eee;
+}
+
+.message-list li a {
+    display: grid;
+    grid-template-columns: 200px 1fr 200px;
+    padding: 1rem;
+    text-decoration: none;
+    color: #333;
+    transition: background-color 0.2s ease;
+}
+
+.message-list li a:hover {
+    background-color: #f9f9f9;
+}
+
+.message-list li.unread a {
+    font-weight: bold;
+}
+
+.message-sender, .message-subject, .message-timestamp {
+    display: flex;
+    align-items: center;
+}
+
+.message-timestamp {
+    font-size: 0.9rem;
+    color: #777;
+    justify-content: flex-end;
+}
+
+/* Message Detail */
+.message-detail-header {
+    margin-bottom: 2rem;
+}
+
+.message-detail-header h3 {
+    margin: 0 0 0.5rem 0;
+}
+
+.message-meta {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.message-body {
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+/* Reply & Compose Form */
+.reply-form, .compose-form {
+    margin-top: 2rem;
+    border-top: 2px solid #eee;
+    padding-top: 2rem;
+}
+
+.reply-form textarea, .compose-form textarea, .compose-form input {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.compose-form select {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
