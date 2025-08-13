@@ -1,0 +1,243 @@
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate, Link } from 'react-router-dom';
+import { personOutline, mailOutline, lockClosedOutline, shieldCheckmarkOutline } from 'ionicons/icons';
+import { IonIcon } from '@ionic/react';
+
+const Register = ({ onRegisterSuccess }) => {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    role: 'user', // Default role
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const { firstName, lastName, email, password, role } = formData;
+
+  const onChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      // Get the auth token from localStorage
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('Authentication required. Please log in as an admin.');
+      }
+
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        }
+      };
+
+      const response = await axios.post(
+        'http://localhost:5000/api/users/register', 
+        {
+          firstName,
+          lastName,
+          email,
+          password,
+          role
+        },
+        config
+      );
+
+      // If this is a self-registration (not common for admin-created users)
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        
+        // Notify parent component of successful registration and login
+        if (onRegisterSuccess) {
+          onRegisterSuccess();
+        }
+        
+        // Redirect to dashboard
+        navigate('/dashboard');
+      } else {
+        // If this is an admin creating a user, just show success message
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          password: '',
+          role: 'user',
+        });
+        
+        // Show success message
+        setError('');
+        // In a real app, you might want to show a success toast/modal here
+        alert('User registered successfully!');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth-page">
+      <div className="auth-container">
+        <div className="auth-header">
+          <h1>Create an Account</h1>
+          <p>Join our community today</p>
+        </div>
+        
+        {error && (
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="row">
+            <div className="col-md-6">
+              <div className="form-group">
+                <label htmlFor="firstName" className="form-label">First Name</label>
+                <div className="input-group">
+                  <span className="input-group-icon">
+                    <IonIcon icon={personOutline} />
+                  </span>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    className="form-control"
+                    placeholder="Enter your first name"
+                    value={firstName}
+                    onChange={onChange}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="col-md-6">
+              <div className="form-group">
+                <label htmlFor="lastName" className="form-label">Last Name</label>
+                <div className="input-group">
+                  <span className="input-group-icon">
+                    <IonIcon icon={personOutline} />
+                  </span>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    className="form-control"
+                    placeholder="Enter your last name"
+                    value={lastName}
+                    onChange={onChange}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="email" className="form-label">Email Address</label>
+            <div className="input-group">
+              <span className="input-group-icon">
+                <IonIcon icon={mailOutline} />
+              </span>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                className="form-control"
+                placeholder="Enter your email"
+                value={email}
+                onChange={onChange}
+                required
+                disabled={loading}
+              />
+            </div>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="password" className="form-label">Password</label>
+            <div className="input-group">
+              <span className="input-group-icon">
+                <IonIcon icon={lockClosedOutline} />
+              </span>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                className="form-control"
+                placeholder="Create a password (min 6 characters)"
+                value={password}
+                onChange={onChange}
+                required
+                minLength={6}
+                disabled={loading}
+              />
+            </div>
+            <small className="form-text text-muted">
+              Password must be at least 6 characters long
+            </small>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="role" className="form-label">Account Type</label>
+            <div className="input-group">
+              <span className="input-group-icon">
+                <IonIcon icon={shieldCheckmarkOutline} />
+              </span>
+              <select 
+                id="role" 
+                name="role"
+                className="form-control"
+                value={role}
+                onChange={onChange}
+                disabled={loading}
+              >
+                <option value="user">Regular User</option>
+                <option value="admin">Administrator</option>
+                <option value="super_admin">Super Administrator</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="form-group mt-4">
+            <button
+              type="submit"
+              className="btn btn-primary w-100"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Creating Account...
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </button>
+          </div>
+          
+          <div className="text-center mt-3">
+            <span className="text-muted">Already have an account? </span>
+            <Link to="/login" className="text-primary font-weight-medium">
+              Sign in
+            </Link>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default Register;

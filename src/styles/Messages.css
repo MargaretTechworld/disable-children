@@ -1,105 +1,266 @@
-.messages-layout {
+/* General container for the messaging components */
+.message-container {
     padding: 2rem;
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 64px);
 }
 
-.inbox-container, .message-detail-container, .compose-container {
+/* Message list container */
+.message-list-container {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    margin-top: 1.5rem;
+}
+
+/* Styling for the navigation between Inbox and Sent */
+.message-nav {
+    display: flex;
+    gap: 1rem;
+    padding: 0 1rem;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 1.5rem;
+}
+
+.message-tab {
+    position: relative;
+    background: none;
+    border: none;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #6c757d;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.message-tab:hover {
+    color: #495057;
+}
+
+.message-tab.active {
+    color: #4361ee;
+    border-bottom-color: #4361ee;
+    font-weight: 600;
+}
+
+.tab-icon {
+    font-size: 1.1rem;
+}
+
+.unread-badge {
+    background-color: #f72585;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+    margin-left: 0.5rem;
+}
+
+/* Message table styles */
+.message-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.message-table th {
+    text-align: left;
+    padding: 1rem 1.5rem;
+    background-color: #f8f9fa;
+    color: #6c757d;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.message-table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f1f3f5;
+    vertical-align: middle;
+}
+
+.message-row {
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.message-row:hover {
+    background-color: #f8f9fa;
+}
+
+.message-row.unread {
+    background-color: #f8f9ff;
+    font-weight: 600;
+}
+
+.message-row.unread .message-sender {
+    color: #212529;
+}
+
+.message-sender {
+    font-weight: 500;
+    color: #343a40;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.message-subject {
+    color: #343a40;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.subject-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 500px;
+}
+
+.recipient-count {
+    background-color: #e9ecef;
+    color: #6c757d;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.message-date {
+    color: #6c757d;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    text-align: right;
+}
+
+/* Empty state */
+.no-messages {
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    padding: 2rem 0;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+}
+
+.empty-state p {
+    margin: 0.5rem 0 0;
+    font-size: 1.1rem;
+    color: #495057;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .message-container {
+        padding: 1rem;
+    }
+    
+    .message-nav {
+        padding: 0 0.5rem;
+    }
+    
+    .message-tab {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .message-table th,
+    .message-table td {
+        padding: 0.75rem 1rem;
+    }
+    
+    .subject-text {
+        max-width: 200px;
+    }
+}
+
+/* Improvements for the message detail view */
+.message-detail-container {
     background: #fff;
     padding: 2rem;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
-.inbox-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 1rem;
-    margin-bottom: 1rem;
+.message-detail-container button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    transition: background-color 0.3s;
 }
 
-.inbox-header h2 {
-    margin: 0;
+.message-detail-container button:hover {
+    background-color: #0056b3;
 }
 
-.message-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.message-list li {
-    border-bottom: 1px solid #eee;
-}
-
-.message-list li a {
-    display: grid;
-    grid-template-columns: 200px 1fr 200px;
-    padding: 1rem;
-    text-decoration: none;
-    color: #333;
-    transition: background-color 0.2s ease;
-}
-
-.message-list li a:hover {
-    background-color: #f9f9f9;
-}
-
-.message-list li.unread a {
-    font-weight: bold;
-}
-
-.message-sender, .message-subject, .message-timestamp {
-    display: flex;
-    align-items: center;
-}
-
-.message-timestamp {
-    font-size: 0.9rem;
-    color: #777;
-    justify-content: flex-end;
-}
-
-/* Message Detail */
 .message-detail-header {
-    margin-bottom: 2rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .message-detail-header h3 {
-    margin: 0 0 0.5rem 0;
+    margin: 0;
+    font-size: 1.5rem;
 }
 
 .message-meta {
     font-size: 0.9rem;
-    color: #555;
+    color: #666;
+    margin-top: 0.5rem;
+    line-height: 1.5;
 }
 
 .message-body {
-    line-height: 1.6;
-    margin-bottom: 2rem;
+    line-height: 1.7;
+    font-size: 1.1rem;
 }
 
-/* Reply & Compose Form */
-.reply-form, .compose-form {
+.reply-form {
     margin-top: 2rem;
-    border-top: 2px solid #eee;
+    border-top: 1px solid #eee;
     padding-top: 2rem;
 }
 
-.reply-form textarea, .compose-form textarea, .compose-form input {
+.reply-form textarea {
     width: 100%;
-    padding: 0.75rem;
-    margin-bottom: 1rem;
+    padding: 1rem;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 5px;
     font-size: 1rem;
-    font-family: inherit;
+    min-height: 120px;
+    margin-bottom: 1rem;
 }
 
-.compose-form select {
-    width: 100%;
-    padding: 0.75rem;
-    margin-bottom: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+.reply-form button {
+    display: block;
+    width: auto;
+    margin-left: auto; /* Aligns button to the right */
 }

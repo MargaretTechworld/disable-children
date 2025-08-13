@@ -44,6 +44,16 @@ export let messages = [
     timestamp: '2025-07-21T14:15:00Z',
     read: false,
   },
+  {
+  id: 4,
+  from: 'super@example.com',
+  to: 'admin1@example.com',
+  subject: 'Welcome to the team!',
+  body: 'Hi Admin 1, welcome aboard! Let me know if you have any questions.',
+  timestamp: '2025-07-21T14:05:00Z',
+  read: false,
+}
+
 ];
 
 // In src/data/mockData.js

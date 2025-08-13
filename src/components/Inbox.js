@@ -7,7 +7,6 @@ const Inbox = ({ user }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Filter messages where the user is the recipient
     const filtered = mockMessages.filter(msg => msg.to === user.email);
     setUserMessages(filtered);
   }, [user.email]);

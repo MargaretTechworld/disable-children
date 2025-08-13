@@ -1,9 +1,37 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+import { IonIcon } from '@ionic/react';
+import { 
+  personOutline, peopleOutline, medicalOutline, schoolOutline, 
+  medkitOutline, warningOutline, documentTextOutline, checkmarkCircleOutline,
+  arrowBackOutline, arrowForwardOutline
+} from 'ionicons/icons';
 import '../styles/ChildForm.css';
 
+// Tab configuration
+const TABS = [
+  { id: 'child', label: 'Child Info', icon: personOutline },
+  { id: 'parent', label: 'Parent/Guardian', icon: peopleOutline },
+  { id: 'disability', label: 'Disability', icon: medicalOutline },
+  { id: 'medical', label: 'Medical', icon: medkitOutline },
+  { id: 'education', label: 'Education', icon: schoolOutline },
+  { id: 'emergency', label: 'Emergency', icon: warningOutline },
+  { id: 'additional', label: 'Additional', icon: documentTextOutline },
+];
+
 const ChildForm = () => {
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
+  // Define disability types that match the backend
+  const DISABILITY_TYPES = [
+    { value: 'autism', label: 'Autism Spectrum Disorder' },
+    { value: 'visual', label: 'Visual Impairment' },
+    { value: 'hearing', label: 'Hearing Impairment' },
+    { value: 'physical', label: 'Physical Disability' },
+    { value: 'intellectual', label: 'Intellectual Disability' },
+    { value: 'down-syndrome', label: 'Down Syndrome' },
+    { value: 'other', label: 'Other (please specify)' }
+  ];
+
+  const initialFormData = {
     // Child's Information
     childFirstName: '',
     childMiddleName: '',
@@ -11,177 +39,483 @@ const ChildForm = () => {
     dob: '',
     gender: '',
     address: '',
+    
     // Parent/Guardian Information
     parentFirstName: '',
     parentLastName: '',
     relationship: '',
     contactNumber: '',
     email: '',
+    
     // Disability Information
     disabilityType: '',
-    disabilitySeverity: '',
+    disabilityOther: '', // New field for 'Other' disability type
+    disabilitySeverity: 'Mild',
     specialNeeds: '',
+    
     // Medical Information
     primaryCareProvider: '',
     medicalConditions: '',
     medications: '',
     allergies: '',
-    medicalDocuments: null,
+    
     // Educational Information
     school: '',
     grade: '',
     iep: 'No',
+    
     // Support Services
     therapies: '',
     otherSupport: '',
+    
     // Emergency Information
     emergencyContactName: '',
     emergencyContactNumber: '',
     alternateEmergencyContact: '',
+    
     // Additional Information
     communicationMethod: '',
-    profilePicture: null,
     additionalNotes: '',
-    // Signature
     parentSignature: '',
-    date: '',
-  });
-
-  const nextStep = () => setStep(step + 1);
-  const prevStep = () => setStep(step - 1);
-
-  const handleChange = input => e => {
-    setFormData({ ...formData, [input]: e.target.value });
+    date: new Date().toISOString().slice(0, 10),
   };
 
-  const handleFileChange = input => e => {
-    setFormData({ ...formData, [input]: e.target.files[0] });
-  };
+  const [activeTab, setActiveTab] = useState('child');
+  const [formData, setFormData] = useState(initialFormData);
+  const [errors, setErrors] = useState({});
+  const [submitStatus, setSubmitStatus] = useState({ type: '', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOtherDisability, setShowOtherDisability] = useState(false);
 
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return (
-          <div className="form-group">
-            <h2>1. Child's Information</h2>
-            <input type="text" placeholder="First Name" value={formData.childFirstName} onChange={handleChange('childFirstName')} />
-            <input type="text" placeholder="Middle Name" value={formData.childMiddleName} onChange={handleChange('childMiddleName')} />
-            <input type="text" placeholder="Last Name" value={formData.childLastName} onChange={handleChange('childLastName')} />
-            <input type="date" placeholder="Date of Birth" value={formData.dob} onChange={handleChange('dob')} />
-            <select value={formData.gender} onChange={handleChange('gender')}>
-              <option value="">Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Non-binary">Non-binary</option>
-              <option value="Prefer not to say">Prefer not to say</option>
-            </select>
-            <textarea placeholder="Home Address (Street, City, State, ZIP Code)" value={formData.address} onChange={handleChange('address')} />
-          </div>
-        );
-      case 2:
-        return (
-          <div className="form-group">
-            <h2>2. Parent/Guardian Information</h2>
-            <input type="text" placeholder="First Name" value={formData.parentFirstName} onChange={handleChange('parentFirstName')} />
-            <input type="text" placeholder="Last Name" value={formData.parentLastName} onChange={handleChange('parentLastName')} />
-            <input type="text" placeholder="Relationship to Child" value={formData.relationship} onChange={handleChange('relationship')} />
-            <input type="text" placeholder="Contact Number" value={formData.contactNumber} onChange={handleChange('contactNumber')} />
-            <input type="email" placeholder="Email Address" value={formData.email} onChange={handleChange('email')} />
-          </div>
-        );
-      case 3:
-        return (
-          <div className="form-group">
-            <h2>3. Disability Information</h2>
-            <input type="text" placeholder="Type of Disability" value={formData.disabilityType} onChange={handleChange('disabilityType')} />
-            <select value={formData.disabilitySeverity} onChange={handleChange('disabilitySeverity')}>
-                <option value="">Select Severity</option>
-                <option value="Mild">Mild</option>
-                <option value="Moderate">Moderate</option>
-                <option value="Severe">Severe</option>
-            </select>
-            <textarea placeholder="Special Needs/Accommodations Required" value={formData.specialNeeds} onChange={handleChange('specialNeeds')} />
-          </div>
-        );
-      case 4:
-        return (
-          <div className="form-group">
-            <h2>4. Medical Information</h2>
-            <input type="text" placeholder="Primary Health Care Provider" value={formData.primaryCareProvider} onChange={handleChange('primaryCareProvider')} />
-            <textarea placeholder="Medical Conditions" value={formData.medicalConditions} onChange={handleChange('medicalConditions')} />
-            <textarea placeholder="Current Medications" value={formData.medications} onChange={handleChange('medications')} />
-            <textarea placeholder="Allergies" value={formData.allergies} onChange={handleChange('allergies')} />
-            <label>Upload Medical Documents/Reports:</label>
-            <input type="file" onChange={handleFileChange('medicalDocuments')} />
-          </div>
-        );
-      case 5:
-        return (
-          <div className="form-group">
-            <h2>5. Educational Information</h2>
-            <input type="text" placeholder="Current School/Program" value={formData.school} onChange={handleChange('school')} />
-            <input type="text" placeholder="Grade Level" value={formData.grade} onChange={handleChange('grade')} />
-            <label>Individualized Education Plan (IEP):</label>
-            <select value={formData.iep} onChange={handleChange('iep')}>
-                <option value="No">No</option>
-                <option value="Yes">Yes</option>
-            </select>
-          </div>
-        );
-      case 6:
-        return (
-          <div className="form-group">
-            <h2>6. Support Services</h2>
-            <textarea placeholder="Current Therapies/Services" value={formData.therapies} onChange={handleChange('therapies')} />
-            <textarea placeholder="Other Support Services" value={formData.otherSupport} onChange={handleChange('otherSupport')} />
-          </div>
-        );
-      case 7:
-        return (
-          <div className="form-group">
-            <h2>7. Emergency Information</h2>
-            <input type="text" placeholder="Emergency Contact Name" value={formData.emergencyContactName} onChange={handleChange('emergencyContactName')} />
-            <input type="text" placeholder="Emergency Contact Number" value={formData.emergencyContactNumber} onChange={handleChange('emergencyContactNumber')} />
-            <input type="text" placeholder="Alternate Emergency Contact" value={formData.alternateEmergencyContact} onChange={handleChange('alternateEmergencyContact')} />
-          </div>
-        );
-      case 8:
-        return (
-          <div className="form-group">
-            <h2>8. Additional Information & Signature</h2>
-            <select value={formData.communicationMethod} onChange={handleChange('communicationMethod')}>
-                <option value="">Preferred Communication Method</option>
-                <option value="Verbal">Verbal</option>
-                <option value="Sign Language">Sign Language</option>
-                <option value="Visual Aids">Visual Aids</option>
-            </select>
-            <label>Upload Profile Picture:</label>
-            <input type="file" onChange={handleFileChange('profilePicture')} />
-            <textarea placeholder="Additional Notes or Comments" value={formData.additionalNotes} onChange={handleChange('additionalNotes')} />
-            <input type="text" placeholder="Parent/Guardian Signature" value={formData.parentSignature} onChange={handleChange('parentSignature')} />
-            <input type="date" placeholder="Date" value={formData.date} onChange={handleChange('date')} />
-          </div>
-        );
-      default:
-        return (
-            <div>
-                <h2>Review and Submit</h2>
-                <p>Please review your information before submitting.</p>
-                {/* You can display a summary of the formData here */}
-            </div>
-        );
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    
+    // Handle disability type change - check if 'other' was selected
+    if (name === 'disabilityType') {
+      setShowOtherDisability(value === 'other');
     }
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (checked ? 'Yes' : 'No') : value
+    }));
+    
+    // Clear error when field is edited
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: null
+      }));
+    }
+  };
+
+  // Email validation is now handled in the validation logic
+
+  // Validate current tab's required fields
+  const validateCurrentTab = (tabId = activeTab) => {
+    const currentTabFields = REQUIRED_FIELDS[tabId] || [];
+    const newErrors = {};
+    
+    currentTabFields.forEach(field => {
+      if (!formData[field]?.trim()) {
+        newErrors[field] = 'This field is required';
+      }
+    });
+
+    // Special validation for email field
+    if (tabId === 'parent' && formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      setSubmitStatus({
+        type: 'error',
+        message: 'Please fill in all required fields before continuing.'
+      });
+      return false;
+    }
+    
+    return true;
+  };
+
+  // Handle tab change with validation
+  const handleTabChange = (tabId) => {
+    // Don't validate if clicking the same tab
+    if (tabId === activeTab) return;
+    
+    // Validate current tab before allowing navigation
+    if (!validateCurrentTab()) {
+      // If validation fails, don't change tabs
+      return;
+    }
+    
+    // Clear any previous error messages
+    setSubmitStatus({ type: '', message: '' });
+    setErrors({});
+    
+    // Change to the new tab
+    setActiveTab(tabId);
+    
+    // Scroll to top of form when changing tabs
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Handle next button click
+  const handleNext = () => {
+    // Validate current tab before proceeding
+    if (!validateCurrentTab()) {
+      return;
+    }
+
+    // Move to next tab or submit if on last tab
+    const currentIndex = TABS.findIndex(tab => tab.id === activeTab);
+    if (currentIndex < TABS.length - 1) {
+      const nextTab = TABS[currentIndex + 1].id;
+      setActiveTab(nextTab);
+      setSubmitStatus({ type: '', message: '' });
+      setErrors({});
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      handleSubmit();
+    }
+  };
+
+  // Handle previous button click
+  const handlePrevious = () => {
+    const currentIndex = TABS.findIndex(tab => tab.id === activeTab);
+    if (currentIndex > 0) {
+      setActiveTab(TABS[currentIndex - 1].id);
+      setSubmitStatus({ type: '', message: '' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    
+    // Final validation of all required fields
+    const newErrors = {};
+    Object.values(REQUIRED_FIELDS).flat().forEach(field => {
+      if (!formData[field]?.trim()) {
+        newErrors[field] = 'This field is required';
+      }
+    });
+
+    // Validate email format if provided
+    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      setSubmitStatus({
+        type: 'error',
+        message: 'Please fill in all required fields correctly before submitting.'
+      });
+      // Find the first tab with errors and switch to it
+      const firstErrorTab = TABS.find(tab => 
+        (REQUIRED_FIELDS[tab.id] || []).some(field => newErrors[field])
+      );
+      if (firstErrorTab) {
+        setActiveTab(firstErrorTab.id);
+      }
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus({ type: '', message: '' });
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:5000/api/children', formData, {
+        headers: {
+          'x-auth-token': token,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      setSubmitStatus({
+        type: 'success',
+        message: 'Child information saved successfully!'
+      });
+      
+      // Reset form after successful submission
+      setFormData(initialFormData);
+      setActiveTab('child');
+    } catch (error) {
+      console.error('Error saving child:', error);
+      setSubmitStatus({
+        type: 'error',
+        message: error.response?.data?.message || 'Failed to save child information. Please try again.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Render form field with error handling
+  const renderField = (name, label, type = 'text', options = [], required = false) => {
+    const isError = !!errors[name];
+    const fieldValue = formData[name] || '';
+    
+    return (
+      <div className={`form-group ${isError ? 'has-error' : ''}`}>
+        <label>
+          {label}
+          {required && <span className="required">*</span>}
+        </label>
+        {type === 'select' ? (
+          <select
+            name={name}
+            value={fieldValue}
+            onChange={handleChange}
+            className={isError ? 'error' : ''}
+            required={required}
+          >
+            <option value="">Select {label}</option>
+            {options.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        ) : type === 'textarea' ? (
+          <textarea
+            name={name}
+            value={fieldValue}
+            onChange={handleChange}
+            className={isError ? 'error' : ''}
+            required={required}
+          />
+        ) : type === 'checkbox' ? (
+          <input
+            type="checkbox"
+            name={name}
+            checked={fieldValue === 'Yes'}
+            onChange={handleChange}
+            className={isError ? 'error' : ''}
+            required={required}
+          />
+        ) : (
+          <input
+            type={type}
+            name={name}
+            value={fieldValue}
+            onChange={handleChange}
+            className={isError ? 'error' : ''}
+            required={required}
+          />
+        )}
+        {isError && <div className="error-message">{errors[name]}</div>}
+      </div>
+    );
+  };
+
+  // Update the disability tab to use dropdown with 'Other' option
+  const renderDisabilityFields = () => (
+    <div className="form-grid">
+      <div className="form-group">
+        <label htmlFor="disabilityType">Type of Disability *</label>
+        <select
+          id="disabilityType"
+          name="disabilityType"
+          value={formData.disabilityType}
+          onChange={handleChange}
+          className={errors.disabilityType ? 'error' : ''}
+          required
+        >
+          <option value="">Select a disability type</option>
+          {DISABILITY_TYPES.map(type => (
+            <option key={type.value} value={type.value}>
+              {type.label}
+            </option>
+          ))}
+        </select>
+        {errors.disabilityType && (
+          <span className="error-message">{errors.disabilityType}</span>
+        )}
+      </div>
+
+      {showOtherDisability && (
+        <div className="form-group">
+          <label htmlFor="disabilityOther">Please specify *</label>
+          <input
+            type="text"
+            id="disabilityOther"
+            name="disabilityOther"
+            value={formData.disabilityOther}
+            onChange={handleChange}
+            className={errors.disabilityOther ? 'error' : ''}
+            required={showOtherDisability}
+          />
+          {errors.disabilityOther && (
+            <span className="error-message">{errors.disabilityOther}</span>
+          )}
+        </div>
+      )}
+
+      {renderField('disabilitySeverity', 'Disability Severity', 'select', [
+        { value: 'Mild', label: 'Mild' },
+        { value: 'Moderate', label: 'Moderate' },
+        { value: 'Severe', label: 'Severe' }
+      ], true)}
+      {renderField('specialNeeds', 'Special Needs', 'textarea')}
+    </div>
+  );
+
+  // Required fields for validation
+  const REQUIRED_FIELDS = {
+    child: ['childFirstName', 'childMiddleName', 'childLastName', 'dob', 'gender', 'address'],
+    parent: ['parentFirstName', 'parentLastName', 'relationship', 'contactNumber', 'email'],
+    disability: ['disabilityType', 'disabilitySeverity'],
+    emergency: ['emergencyContactName', 'emergencyContactNumber']
   };
 
   return (
     <div className="form-container">
-      <h1>Basic Information Form ({step}/9)</h1>
-      {renderStep()}
-      <div className="navigation-buttons">
-        {step > 1 && <button onClick={prevStep}>Previous</button>}
-        {step < 9 && <button onClick={nextStep}>Next</button>}
-        {step === 9 && <button type="submit">Submit</button>}
-      </div>
+      <h1>Add a New Child</h1>
+      
+      {submitStatus.message && (
+        <div className={`alert ${submitStatus.type === 'error' ? 'error' : 'success'}`}>
+          {submitStatus.message}
+        </div>
+      )}
+      
+      <form onSubmit={handleSubmit}>
+        <div className="tabs-container">
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              className={`tab ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => handleTabChange(tab.id)}
+            >
+              <IonIcon icon={tab.icon} /> {tab.label}
+            </button>
+          ))}
+        </div>
+        
+        <div className="tabs-content">
+          <div className={`tab-pane ${activeTab === 'child' ? 'active' : ''}`}>
+            <h3><IonIcon icon={personOutline} /> Child's Information</h3>
+            <div className="form-grid">
+              {renderField('childFirstName', 'First Name', 'text', [], true)}
+              {renderField('childMiddleName', 'Middle Name')}
+              {renderField('childLastName', 'Last Name', 'text', [], true)}
+              {renderField('dob', 'Date of Birth', 'date', [], true)}
+              {renderField('gender', 'Gender', 'select', [
+                { value: 'Male', label: 'Male' },
+                { value: 'Female', label: 'Female' },
+                { value: 'Other', label: 'Other' }
+              ], true)}
+              {renderField('address', 'Address', 'textarea', [], true)}
+            </div>
+          </div>
+          
+          <div className={`tab-pane ${activeTab === 'parent' ? 'active' : ''}`}>
+            <h3><IonIcon icon={peopleOutline} /> Parent/Guardian Information</h3>
+            <div className="form-grid">
+              {renderField('parentFirstName', 'First Name', 'text', [], true)}
+              {renderField('parentLastName', 'Last Name', 'text', [], true)}
+              {renderField('relationship', 'Relationship to Child', 'text', [], true)}
+              {renderField('contactNumber', 'Contact Number', 'tel', [], true)}
+              {renderField('email', 'Email', 'email', [], true)}
+            </div>
+          </div>
+          
+          <div className={`tab-pane ${activeTab === 'disability' ? 'active' : ''}`}>
+            <h3><IonIcon icon={medicalOutline} /> Disability Information</h3>
+            {renderDisabilityFields()}
+          </div>
+          
+          <div className={`tab-pane ${activeTab === 'medical' ? 'active' : ''}`}>
+            <h3><IonIcon icon={medkitOutline} /> Medical Information</h3>
+            <div className="form-grid">
+              {renderField('primaryCareProvider', 'Primary Care Provider')}
+              {renderField('medicalConditions', 'Medical Conditions', 'textarea')}
+              {renderField('medications', 'Current Medications', 'textarea')}
+              {renderField('allergies', 'Allergies', 'textarea')}
+            </div>
+          </div>
+          
+          <div className={`tab-pane ${activeTab === 'education' ? 'active' : ''}`}>
+            <h3><IonIcon icon={schoolOutline} /> Educational Information</h3>
+            <div className="form-grid">
+              {renderField('school', 'School Name')}
+              {renderField('grade', 'Grade Level')}
+              {renderField('iep', 'Has IEP?', 'checkbox')}
+            </div>
+          </div>
+          
+          <div className={`tab-pane ${activeTab === 'emergency' ? 'active' : ''}`}>
+            <h3><IonIcon icon={warningOutline} /> Emergency Contacts</h3>
+            <div className="form-grid">
+              {renderField('emergencyContactName', 'Primary Contact Name', 'text', [], true)}
+              {renderField('emergencyContactNumber', 'Primary Contact Number', 'tel', [], true)}
+              {renderField('alternateEmergencyContact', 'Alternate Contact')}
+            </div>
+          </div>
+          
+          <div className={`tab-pane ${activeTab === 'additional' ? 'active' : ''}`}>
+            <h3><IonIcon icon={documentTextOutline} /> Additional Information</h3>
+            <div className="form-grid">
+              {renderField('communicationMethod', 'Preferred Communication Method')}
+              {renderField('additionalNotes', 'Additional Notes', 'textarea')}
+              {renderField('parentSignature', 'Parent/Guardian Signature', 'text', [], true)}
+            </div>
+          </div>
+        </div>
+        
+        <div className="form-actions">
+          <div className="form-actions-left">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setFormData(initialFormData)}
+              disabled={isSubmitting}
+            >
+              Reset Form
+            </button>
+          </div>
+          
+          <div className="form-actions-right">
+            {TABS.findIndex(tab => tab.id === activeTab) > 0 && (
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={handlePrevious}
+                disabled={isSubmitting}
+              >
+                <IonIcon icon={arrowBackOutline} /> Previous
+              </button>
+            )}
+            
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleNext}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <IonIcon icon={checkmarkCircleOutline} /> Saving...
+                </>
+              ) : TABS[TABS.length - 1].id === activeTab ? (
+                'Submit Child Information'
+              ) : (
+                <>
+                  Next <IonIcon icon={arrowForwardOutline} />
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   );
 };

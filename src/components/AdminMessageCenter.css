@@ -1,0 +1,255 @@
+/* Admin Message Center Styles */
+.admin-message-center {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.admin-message-center h2 {
+  color: #333;
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.message-container {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.message-form, .recipient-selection {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  min-width: 300px;
+}
+
+.message-form {
+  flex: 2;
+}
+
+.recipient-selection {
+  flex: 1;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #444;
+}
+
+input[type="text"],
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+input[type="text"]:focus,
+textarea:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 150px;
+}
+
+.send-button {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.send-button:hover {
+  background-color: #3a7bc8;
+}
+
+.send-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.divider {
+  margin: 20px 0;
+  text-align: center;
+  color: #777;
+  font-size: 14px;
+  position: relative;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 45%;
+  height: 1px;
+  background-color: #eee;
+}
+
+.divider::before {
+  left: 0;
+}
+
+.divider::after {
+  right: 0;
+}
+
+.disability-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.disability-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.disability-item input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.recipient-count {
+  margin: 24px 0;
+  padding: 12px;
+  background-color: #f5f9ff;
+  border-radius: 4px;
+  border-left: 3px solid #4a90e2;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.recipient-count p {
+  margin: 0;
+}
+
+.message-tips {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.message-tips h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 15px;
+  color: #555;
+}
+
+.message-tips ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.message-tips li {
+  margin-bottom: 6px;
+}
+
+/* Notification styles */
+.notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 4px;
+  color: white;
+  font-size: 14px;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+.notification.success {
+  background-color: #4caf50;
+}
+
+.notification.error {
+  background-color: #f44336;
+}
+
+.notification.warning {
+  background-color: #ff9800;
+}
+
+.notification.info {
+  background-color: #2196f3;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .message-container {
+    flex-direction: column;
+  }
+  
+  .disability-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Dark mode support */
+.dark-theme .message-form,
+.dark-theme .recipient-selection {
+  background: #2d3748;
+  color: #e2e8f0;
+}
+
+.dark-theme label,
+.dark-theme h3,
+.dark-theme .divider {
+  color: #e2e8f0;
+}
+
+.dark-theme input[type="text"],
+.dark-theme textarea {
+  background-color: #2d3748;
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+
+.dark-theme .message-tips ul {
+  color: #cbd5e0;
+}
+
+.dark-theme .recipient-count {
+  background-color: #2d3748;
+  border-left-color: #4a90e2;
+}

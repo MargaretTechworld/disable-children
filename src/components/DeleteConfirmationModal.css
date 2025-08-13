@@ -1,0 +1,39 @@
+.delete-confirmation-content p {
+  margin: 0 0 15px;
+  line-height: 1.5;
+  color: #333;
+}
+
+.delete-confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.delete-confirmation-actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease-out;
+}
+
+.cancel-button {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.cancel-button:hover {
+  background-color: #e0e0e0;
+}
+
+.delete-button {
+  background-color: #e94560;
+  color: white;
+}
+
+.delete-button:hover {
+  background-color: #d43d51;
+}

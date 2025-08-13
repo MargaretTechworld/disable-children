@@ -1,0 +1,40 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "server": "nodemon server.js",
+    "client": "npm start --prefix ../frontend",
+    "dev": "npm run server",
+    "test": "jest --verbose --coverage",
+    "seed": "node config/seeds.js",
+    "migrate": "npx sequelize-cli db:migrate",
+    "migrate:undo": "npx sequelize-cli db:migrate:undo",
+    "migrate:make-eventId-nullable": "npx sequelize-cli db:migrate --to make-eventId-nullable-in-notifications.js",
+    "migrate:undo-eventId-nullable": "npx sequelize-cli db:migrate:undo:all --to make-eventId-nullable-in-notifications.js",
+    "migration:generate": "sequelize-cli migration:generate"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "limiter": "^3.0.0",
+    "mysql2": "^3.10.1",
+    "nodemailer": "^7.0.5",
+    "sequelize": "^6.37.3",
+    "sequelize-cli": "^6.6.2",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.3"
+  }
+}

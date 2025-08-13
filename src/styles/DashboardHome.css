@@ -1,0 +1,69 @@
+.dashboard-home {
+  gap: 1.5rem;
+  padding: 1rem;
+  width: 100%;
+  min-height: 100%;
+}
+
+.cards-container {
+  width: 100%;
+}
+
+.details {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+/* Responsive layout - Desktop */
+@media (min-width: 992px) {
+  .dashboard-home {
+    padding: 1.5rem;
+    align-items: flex-start;
+  }
+  
+  .cards-container {
+    max-width: 75%;
+    padding-right: 1.5rem;
+  }
+  
+  .details {
+    margin-top: 0;
+    position: sticky;
+    top: 1.5rem;
+  }
+}
+
+/* Dark theme support */
+[data-theme='dark'] {
+  .dashboard-home {
+    background-color: var(--ion-color-dark);
+    color: var(--ion-color-light);
+  }
+  
+  .details > div {
+    background: var(--ion-color-step-850);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Card specific styling */
+.cards-container > div {
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+/* Child list specific styling */
+.details > div {
+  background: var(--ion-background-color);
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Smooth transitions */
+.dashboard-home, 
+.dashboard-home * {
+  transition: all 0.3s ease;
+}
