@@ -233,6 +233,26 @@ const ComposeMessageForm = ({
                     </Box>
                   </>
                 )}
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={isSending ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+                onClick={handleSendMessage}
+                disabled={isSending || !subject.trim() || !message.trim() || (!sendToAll && selectedDisabilities.length === 0)}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  px: 3,
+                  py: 1,
+                  borderRadius: 1,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  '&:hover': {
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+                  },
+                }}
+              >
+                {isSending ? 'Sending...' : 'Send Message'}
+              </Button>
               </FormGroup>
             </FormControl>
           </CardContent>
@@ -246,7 +266,7 @@ const ComposeMessageForm = ({
 const SentMessagesTable = ({
   isLoadingSent, sentMessages, fetchSentMessages, page, rowsPerPage,
   handleChangePage, handleChangeRowsPerPage, handleViewMessage, handleDeleteClick,
-  currentUser // Add currentUser prop
+  user // Changed from currentUser to user for consistency
 }) => (
   <Box sx={{ p: 3 }}>
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -398,7 +418,7 @@ const SentMessagesTable = ({
                           <VisibilityIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      {msg.sender?.id === currentUser?.id && (
+                      {user && (user.role === 'admin' || user.role === 'super_admin' || (msg.sender && msg.sender.id === user.id)) && (
                         <Tooltip title="Delete message">
                           <IconButton
                             size="small"
@@ -721,7 +741,6 @@ const fetchDisabilityTypes = async () => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error fetching disability types:', error);
     throw error;
   }
 };
@@ -735,12 +754,9 @@ const fetchRecipientCount = async (disabilities = []) => {
     return Array.isArray(disabilities) ? disabilities : [disabilities];
   })();
 
-  console.log('Fetching count for disabilities:', safeDisabilities);
-
   try {
     const token = localStorage.getItem('token');
     if (!token) {
-      console.error('No authentication token found');
       throw new Error('Authentication required');
     }
 
@@ -928,15 +944,32 @@ useEffect(() => {
 
   // Handle send message
   const handleSendMessage = async () => {
-    // ... existing validation code ...
+    // Basic validation
+    if (!message.trim()) {
+      setSnackbar({
+        open: true,
+        message: 'Please enter a message',
+        severity: 'error'
+      });
+      return;
+    }
+    
+    if (!sendToAll && selectedDisabilities.length === 0) {
+      setSnackbar({
+        open: true,
+        message: 'Please select at least one disability type or choose to send to all parents',
+        severity: 'error'
+      });
+      return;
+    }
   
     try {
       setIsSending(true);
       const token = localStorage.getItem('token');
       
       const response = await axios.post('http://localhost:5000/api/notifications/send-to-parents', {
-        subject,
-        message,
+        subject: subject.trim(),
+        message: message.trim(),
         disabilityTypes: sendToAll ? [] : selectedDisabilities
       }, {
         withCredentials: true,
@@ -954,13 +987,20 @@ useEffect(() => {
       setRecipientCount(null);
   
       // Get the success count from the response
-      const successCount = response.data?.stats?.success;
+      const successCount = response.data?.stats?.success || 0;
       
+      // Show success message
       setSnackbar({
         open: true,
         message: `Message sent successfully to ${successCount} parent${successCount !== 1 ? 's' : ''}`,
         severity: 'success'
       });
+      
+      // Refresh sent messages
+      await fetchSentMessages();
+      
+      // Switch to sent messages tab
+      setActiveTab(1);
   
     } catch (error) {
       console.error('Error sending message:', {
@@ -971,7 +1011,7 @@ useEffect(() => {
       
       setSnackbar({
         open: true,
-        message: `Error: ${error.response?.data?.message || error.message}`,
+        message: `Error: ${error.response?.data?.message || error.message || 'Failed to send message'}`,
         severity: 'error'
       });
     } finally {
@@ -1135,7 +1175,7 @@ useEffect(() => {
             handleChangeRowsPerPage={handleChangeRowsPerPage}
             handleViewMessage={handleViewMessage}
             handleDeleteClick={handleDeleteClick}
-            currentUser={user}
+            user={user}
           />
         </TabPanel>
       </Card>
@@ -1159,11 +1199,44 @@ useEffect(() => {
         autoHideDuration={6000}
         onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        sx={{
+          '&.MuiSnackbar-root': {
+            top: '80px', // Position below the top bar
+            right: '20px',
+            zIndex: 9999, // Very high z-index to ensure it's above everything
+            position: 'fixed' // Ensure it stays in place
+          },
+          '& .MuiPaper-root': {
+            minWidth: '300px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            '& .MuiAlert-icon': {
+              fontSize: '1.5rem',
+              marginRight: '12px',
+              alignItems: 'center',
+              display: 'flex'
+            },
+            '& .MuiAlert-message': {
+              fontSize: '0.95rem',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              padding: '6px 0'
+            }
+          }
+        }}
       >
         <Alert
+          elevation={6}
+          variant="filled"
           onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
           severity={snackbar.severity}
-          sx={{ width: '100%' }}
+          sx={{
+            width: '100%',
+            '& .MuiAlert-message': {
+              display: 'flex',
+              alignItems: 'center'
+            }
+          }}
         >
           {snackbar.message}
         </Alert>

@@ -37,6 +37,9 @@
   color: var(--heading-color);
   letter-spacing: -0.025em;
 }
+.subtitle{
+  text-align: center;
+}
 
 .header-content .subtitle {
   margin: 0.5rem 0 0;

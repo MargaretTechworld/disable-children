@@ -56,7 +56,7 @@ const DashboardHome = () => {
     <div className="dashboard-home">
       <div className="dashboard-header">
         <h1>Welcome back, {user.firstName || 'User'}</h1>
-        <p>Here's what's happening with your account today.</p>
+        <p className='dashboard-subtitle'>Here's what's happening with your account today.</p>
       </div>
       
       <div className="cards-container">

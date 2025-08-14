@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { mailOutline, lockClosedOutline } from 'ionicons/icons';
+import { mailOutline, lockClosedOutline, alertCircleOutline } from 'ionicons/icons';
 import { IonIcon } from '@ionic/react';
 import { useAuth } from '../contexts/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -25,17 +26,30 @@ const Login = () => {
     e.preventDefault();
     if (loading) return;
     
+    // Basic validation
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+    
     setLoading(true);
     setError('');
 
     try {
       const result = await login(email, password);
       if (!result.success) {
-        setError(result.error || 'Login failed. Please check your credentials.');
+        // More specific error messages based on the error type
+        if (result.error?.includes('credentials')) {
+          setError('Invalid email or password. Please try again.');
+        } else if (result.error?.includes('network')) {
+          setError('Network error. Please check your connection and try again.');
+        } else {
+          setError(result.error || 'Login failed. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('An unexpected error occurred. Please try again.');
+      setError('An unexpected error occurred. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -49,19 +63,29 @@ const Login = () => {
           <p>Sign in to your account to continue</p>
         </div>
         
-        {error && (
-          <div className="alert alert-danger" role="alert">
-            {error}
-          </div>
-        )}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              className="error-notification"
+              initial={{ opacity: 0, y: -20, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="error-content">
+                <IonIcon icon={alertCircleOutline} className="error-icon" />
+                <span>{error}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="email" className="form-label">Email Address</label>
-            <div className="input-group">
-              <span className="input-group-icon">
+            <label htmlFor="email" className="form-label"><span className="input-group-icon">
                 <IonIcon icon={mailOutline} />
-              </span>
+              </span>Email Address</label>
+            <div className="input-group">
               <input
                 type="email"
                 id="email"
@@ -77,15 +101,11 @@ const Login = () => {
           
           <div className="form-group">
             <div className="d-flex justify-content-between">
-              <label htmlFor="password" className="form-label">Password</label>
-              <Link to="/forgot-password" className="text-sm text-primary">
-                Forgot password?
-              </Link>
+              <label htmlFor="password" className="form-label"> <span className="input-group-icon">
+                <IonIcon icon={lockClosedOutline} />
+              </span>Password</label>
             </div>
             <div className="input-group">
-              <span className="input-group-icon">
-                <IonIcon icon={lockClosedOutline} />
-              </span>
               <input
                 type="password"
                 id="password"
@@ -98,6 +118,11 @@ const Login = () => {
                 minLength={6}
               />
             </div>
+          </div>
+          <div>
+          <Link to="/forgot-password" className="text-sm text-primary text-decoration-none">
+                Forgot password?
+              </Link>
           </div>
           
           <button 
@@ -114,13 +139,6 @@ const Login = () => {
               'Sign In'
             )}
           </button>
-          
-          <div className="text-center mt-3">
-            <span className="text-muted">Don't have an account? </span>
-            <Link to="/register" className="text-primary">
-              Create account
-            </Link>
-          </div>
         </form>
       </div>
     </div>

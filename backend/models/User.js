@@ -1,3 +1,5 @@
+const bcrypt = require('bcryptjs');
+
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define('User', {
     id: {
@@ -82,18 +84,27 @@ module.exports = (sequelize, DataTypes) => {
     },
     scopes: {
       withPassword: {
-        attributes: {}
+        attributes: { include: ['password'] }
       }
     },
     hooks: {
-      beforeCreate: (user) => {
+      beforeCreate: async (user) => {
         if (user.email) {
           user.email = user.email.toLowerCase();
         }
+        if (user.password) {
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
       },
-      beforeUpdate: (user) => {
+      beforeUpdate: async (user) => {
         if (user.changed('email')) {
           user.email = user.email.toLowerCase();
+        }
+        // Only hash the password if it's being updated
+        if (user.changed('password') && user.password) {
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(user.password, salt);
         }
       }
     }

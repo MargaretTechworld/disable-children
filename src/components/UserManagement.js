@@ -248,10 +248,12 @@ const UserManagement = () => {
               // Add search functionality here
             />
           </div>
-          <Link to="/register" className="btn btn-primary">
-            <IonIcon icon={add} />
-            Add New User
-          </Link>
+          {(user?.role === 'superadmin' || user?.role === 'super_admin') && (
+            <Link to="/dashboard/register" className="btn">
+              <IonIcon icon={add} />
+              Add New User
+            </Link>
+          )}
         </div>
       </div>
       

@@ -72,44 +72,62 @@ const Settings = () => {
         throw new Error('Authentication token not found. Please log in again.');
       }
 
-      const userResponse = await axios.get('http://localhost:5000/api/users/me', {
-        headers: { 'x-auth-token': token }
-      });
-
-      if (!userResponse.data || !userResponse.data._id) {
-        throw new Error('Failed to verify user session');
+      // Get current user ID from the user object in context
+      if (!user || !user.id) {
+        throw new Error('User information not available. Please refresh the page and try again.');
       }
 
+      console.log('Attempting to update password for user ID:', user.id);
+      console.log('Token being sent:', token ? 'Token exists' : 'No token');
+
       const response = await axios.put(
-        `http://localhost:5000/api/users/${userResponse.data._id}/password`,
-        { currentPassword, newPassword },
+        `http://localhost:5000/api/users/${user.id}/password`,
+        { 
+          currentPassword,
+          newPassword 
+        },
         {
           headers: {
             'Content-Type': 'application/json',
             'x-auth-token': token
-          }
+          },
+          withCredentials: true
         }
       );
       
-      if (response.data.success) {
-        setMessage({ 
-          type: 'success', 
-          text: 'Password changed successfully' 
-        });
-        
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      } else {
-        throw new Error(response.data.message || 'Failed to change password');
-      }
+      setMessage({ 
+        type: 'success', 
+        text: response.data?.message || 'Password changed successfully' 
+      });
+      
+      // Clear the form
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
       
     } catch (error) {
-      console.error('Error changing password:', error);
+      console.error('Error changing password:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers ? 'Headers present' : 'No headers'
+        }
+      });
+      
       let errorMessage = 'Failed to change password. Please try again.';
       
       if (error.response) {
-        errorMessage = error.response.data?.message || errorMessage;
+        // Handle specific error messages from the server
+        if (error.response.status === 403) {
+          errorMessage = 'You are not authorized to perform this action. Please log out and log in again.';
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data?.message || 'Invalid request. Please check your input.';
+        } else {
+          errorMessage = error.response.data?.message || errorMessage;
+        }
       } else if (error.request) {
         errorMessage = 'No response from server. Please check your connection.';
       } else {

@@ -106,16 +106,15 @@ function AppContent() {
           } 
         />
         
+        {/* Registration is now only accessible to super admins via the dashboard */}
         <Route 
-          path="/register" 
+          path="/dashboard/register" 
           element={
-            user ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
+            <ProtectedRoute requiredRole="super_admin">
               <div className="auth-page">
                 <Register />
               </div>
-            )
+            </ProtectedRoute>
           } 
         />
         
@@ -131,7 +130,14 @@ function AppContent() {
           <Route index element={<DashboardHome />} />
           <Route path="childform" element={<ChildForm />} />
           <Route path="manage-children" element={<ManageChildrenView />} />
-          <Route path="message-center" element={<AdminMessageCenter />} />
+          <Route 
+            path="message-center" 
+            element={
+              <ProtectedRoute>
+                <AdminMessageCenter user={user} />
+              </ProtectedRoute>
+            } 
+          />
           <Route 
             path="user-management" 
             element={

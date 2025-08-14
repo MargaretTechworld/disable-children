@@ -768,7 +768,7 @@ const ManageChildrenView = () => {
       <header className="page-header">
         <div className="header-content">
           <h1>Children Management</h1>
-          <p className="subtitle">Manage and monitor children's records</p>
+          <p className="dashboard-subtitle">Manage and monitor children's records</p>
         </div>
       </header>
 
