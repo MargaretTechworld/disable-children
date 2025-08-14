@@ -96,7 +96,7 @@ function AppContent() {
         <Route 
           path="/login" 
           element={
-            user ? (
+            user && !loading ? (
               <Navigate to="/dashboard" replace />
             ) : (
               <div className="auth-page">

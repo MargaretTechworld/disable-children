@@ -7,6 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [loginError, setLoginError] = useState(null);
 
   const fetchUser = useCallback(async (token = null) => {
     const authToken = token || localStorage.getItem('token');
@@ -50,30 +51,56 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       setLoading(true);
+      setError(null);
+      setLoginError(null);
+      
       const response = await axios.post('http://localhost:5000/api/users/login', {
         email,
         password,
+      }, {
+        // Prevent axios from throwing on HTTP error status
+        validateStatus: (status) => status >= 200 && status < 500
       });
 
-      if (response.data.token) {
+      // If we have a successful response with a token
+      if (response.data && response.data.token) {
         localStorage.setItem('token', response.data.token);
         const userData = await fetchUser(response.data.token);
         
         if (userData) {
           return { success: true };
         }
+        return { 
+          success: false, 
+          error: 'Failed to fetch user data after login' 
+        };
       }
       
+      // Handle 400 Bad Request with error message
+      if (response.status === 400 || response.status === 401) {
+        const errorMessage = response.data?.message || 'Invalid email or password';
+        setLoginError(errorMessage);
+        return { 
+          success: false, 
+          error: errorMessage
+        };
+      }
+      
+      // Handle other error cases
+      const errorMessage = response.data?.message || 'Login failed. Please try again.';
+      setLoginError(errorMessage);
       return { 
         success: false, 
-        error: 'Login failed. No token received.' 
+        error: errorMessage
       };
       
     } catch (error) {
       console.error('Login error:', error);
+      const errorMessage = error.response?.data?.message || 'An unexpected error occurred. Please try again.';
+      setLoginError(errorMessage);
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Login failed. Please try again.'
+        error: errorMessage
       };
     } finally {
       setLoading(false);
@@ -90,6 +117,7 @@ export const AuthProvider = ({ children }) => {
       user, 
       loading, 
       error,
+      loginError,
       login, 
       logout,
       isAuthenticated: !!user,
