@@ -64,7 +64,6 @@ const DashboardHome = () => {
       </div>
       
       <div className="details">
-        <h2>Recent Children</h2>
         <ChildList />
       </div>
     </div>
