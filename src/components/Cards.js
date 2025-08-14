@@ -3,6 +3,7 @@ import axios from 'axios';
 import { IonIcon } from '@ionic/react';
 import { peopleOutline, add } from 'ionicons/icons';
 import "../styles/Cards.css"
+import { Link } from 'react-router-dom';
 
 const Cards = () => {
   const [stats, setStats] = useState({
@@ -45,7 +46,7 @@ const Cards = () => {
   }, []);
 
   const cardData = [
-    { number: 'Add', label: 'New Child', icon: add, view: 'Add Child' },
+    { number: 'Add', Link: '/dashboard/childform', label: 'New Child', icon: add, view: 'Add Child' },
     { number: loading ? '...' : stats.total, label: 'Total Children', icon: peopleOutline },
     { number: loading ? '...' : stats.male, label: 'Male', icon: peopleOutline },
     { number: loading ? '...' : stats.female, label: 'Female', icon: peopleOutline },
@@ -54,15 +55,17 @@ const Cards = () => {
   return (
     <div className="cardBox">
       {cardData.map((item, i) => (
-        <div className="card" key={i}>
-          <div>
-            <div className="numbers">{item.number}</div>
-            <div className="cardName">{item.label}</div>
-          </div>
+        <Link to={item.Link} className="card" key={i}>
+          
+            <div>
+              <div className="numbers">{item.number}</div>
+              <div className="cardName">{item.label}</div>
+            </div>
+          
           <div className="iconBx">
             <IonIcon icon={item.icon} />
           </div>
-        </div>
+        </Link>
       ))}
     </div>
   );

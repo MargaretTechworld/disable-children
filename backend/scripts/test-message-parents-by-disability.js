@@ -2,25 +2,73 @@ const { Op } = require('sequelize');
 const { User, Child } = require('../models');
 const NotificationService = require('../services/notificationService');
 
+// Logger utility for consistent logging
+const logger = {
+  info: (message, data = {}) => {
+    console.info('Test Script Info:', {
+      script: 'test-message-parents-by-disability',
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  debug: (message, data = {}) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Test Script Debug:', {
+        script: 'test-message-parents-by-disability',
+        message,
+        ...data,
+        timestamp: new Date().toISOString()
+      });
+    }
+  },
+  error: (message, error, data = {}) => {
+    console.error('Test Script Error:', {
+      script: 'test-message-parents-by-disability',
+      message,
+      error: error?.message || error,
+      stack: error?.stack,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  success: (message, data = {}) => {
+    console.info('Test Script Success:', {
+      script: 'test-message-parents-by-disability',
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  warn: (message, data = {}) => {
+    console.warn('Test Script Warning:', {
+      script: 'test-message-parents-by-disability',
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
 // Test data
 const TEST_DISABILITIES = ['autism', 'adhd', 'down_syndrome', 'cerebral_palsy', 'visual_impairment'];
 
 async function testMessageParentsByDisability() {
   try {
-    console.log('Starting test: Send message to parents filtered by children\'s disabilities');
+    logger.info('Starting test: Send message to parents filtered by children\'s disabilities');
     
     // Get database connection
     const sequelize = require('../config/database');
     await sequelize.authenticate();
-    console.log('Database connection established');
+    logger.info('Database connection established');
     
     // Sync models
     await sequelize.sync();
-    console.log('Database synced');
+    logger.info('Database synced');
     
     // Test case 1: Send to parents with children having specific disabilities
     const targetDisabilities = ['autism', 'adhd'];
-    console.log(`\n=== Test Case 1: Filtering parents with children having ${targetDisabilities.join(' or ')} ===`);
+    logger.info(`Test Case 1: Filtering parents with children having ${targetDisabilities.join(' or ')}`);
     
     await sendTestMessage({
       subject: 'Important Update for Parents of Children with Autism or ADHD',
@@ -40,7 +88,7 @@ async function testMessageParentsByDisability() {
     });
     
     // Test case 2: Send to all parents (no filter)
-    console.log('\n=== Test Case 2: Sending to all parents (no disability filter) ===');
+    logger.info('Test Case 2: Sending to all parents (no disability filter)');
     await sendTestMessage({
       subject: 'General Announcement for All Parents',
       message: `\
@@ -52,20 +100,25 @@ async function testMessageParentsByDisability() {
       // No disabilityTypes means send to all parents
     });
     
-    console.log('\nAll test cases completed');
+    logger.info('All test cases completed');
     process.exit(0);
   } catch (error) {
-    console.error('Test failed:', error);
+    logger.error('Test failed', error);
     process.exit(1);
   }
 }
 
 async function sendTestMessage({ subject, message, disabilityTypes }) {
-  console.log(`\nSending message with subject: "${subject}"`);
+  logger.info('Sending message with subject', {
+    subject,
+    disabilityTypes
+  });
   if (disabilityTypes) {
-    console.log(`Filtering parents with children having: ${disabilityTypes.join(', ')}`);
+    logger.info('Filtering parents with children having', {
+      disabilityTypes
+    });
   } else {
-    console.log('Sending to all parents (no disability filter)');
+    logger.info('Sending to all parents (no disability filter)');
   }
   
   const result = await NotificationService.sendMessageToAllParents({
@@ -75,9 +128,8 @@ async function sendTestMessage({ subject, message, disabilityTypes }) {
     disabilityTypes
   });
   
-  console.log('Result:', {
+  logger.info('Message sent result', {
     success: result.success,
-    message: result.message,
     stats: {
       total: result.stats.total,
       success: result.stats.success,
@@ -86,7 +138,9 @@ async function sendTestMessage({ subject, message, disabilityTypes }) {
   });
   
   if (result.stats.failed > 0) {
-    console.warn('Some messages failed to send:', result.stats.errors);
+    logger.warn('Some messages failed to send', {
+      errors: result.stats.errors
+    });
   }
   
   return result;

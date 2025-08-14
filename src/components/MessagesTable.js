@@ -15,7 +15,6 @@ const MessagesTable = ({ messages = [], onSelectMessage, user }) => {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
-          console.error('No authentication token found');
           return;
         }
 
@@ -46,10 +45,11 @@ const MessagesTable = ({ messages = [], onSelectMessage, user }) => {
         });
         setSenders(uniqueSenders);
       } catch (error) {
-        console.error('Error fetching messages:', {
+        console.error('Error details:', {
           message: error.message,
-          response: error.response?.data,
-          status: error.response?.status
+          status: error.response?.status,
+          data: error.response?.data,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
       }
     };

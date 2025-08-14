@@ -2,6 +2,46 @@ const { sequelize } = require('../config/database');
 const NotificationService = require('../services/notificationService');
 const User = require('../models/User');
 
+// Logger utility for consistent logging
+const logger = {
+  info: (message, data = {}) => {
+    console.info('Test Script Info:', {
+      script: 'test-send-message',
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  debug: (message, data = {}) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Test Script Debug:', {
+        script: 'test-send-message',
+        message,
+        ...data,
+        timestamp: new Date().toISOString()
+      });
+    }
+  },
+  error: (message, error, data = {}) => {
+    console.error('Test Script Error:', {
+      script: 'test-send-message',
+      message,
+      error: error?.message || error,
+      stack: error?.stack,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  success: (message, data = {}) => {
+    console.info('Test Script Success:', {
+      script: 'test-send-message',
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
 // Test configuration
 const TEST_CONFIG = {
   // Use an existing admin user ID
@@ -15,17 +55,24 @@ async function testSendMessage() {
   try {
     // Test database connection
     await sequelize.authenticate();
-    console.log('Database connection established successfully.');
+    logger.info('Database connection established');
 
     // Verify the test user exists and is an admin
     const adminUser = await User.findByPk(TEST_CONFIG.adminUserId);
     if (!adminUser) {
       throw new Error(`Admin user with ID ${TEST_CONFIG.adminUserId} not found`);
     }
-    console.log(`Using admin user: ${adminUser.email} (ID: ${adminUser.id})`);
+    logger.info('Using admin user', {
+      userId: adminUser.id,
+      email: adminUser.email,
+      role: adminUser.role
+    });
 
     // Send test message
-    console.log('\nSending test message...');
+    logger.info('Sending test message', {
+      messageType: 'test',
+      senderId: adminUser.id
+    });
     const result = await NotificationService.sendMessageToAllParents({
       subject: TEST_CONFIG.subject,
       message: TEST_CONFIG.message,
@@ -33,8 +80,11 @@ async function testSendMessage() {
       disabilityTypes: TEST_CONFIG.disabilityTypes
     });
 
-    console.log('\nMessage sent result:');
-    console.log(JSON.stringify(result, null, 2));
+    logger.info('Message send result', {
+      success: result.success,
+      messageId: result.messageId,
+      recipientCount: result.recipients?.length || 0
+    });
 
     if (result.success) {
       // Get the created notification
@@ -48,25 +98,16 @@ async function testSendMessage() {
         ]
       });
 
-      console.log('\nCreated notification:');
-      console.log(JSON.stringify({
-        id: notification.id,
-        messageId: notification.messageId,
+      logger.debug('Notification created', {
+        notificationId: notification.id,
         subject: notification.subject,
         status: notification.status,
-        type: notification.type,
-        sender: notification.sender ? {
-          id: notification.sender.id,
-          name: [notification.sender.firstName, notification.sender.lastName].filter(Boolean).join(' '),
-          email: notification.sender.email
-        } : null,
-        metadata: notification.metadata,
-        createdAt: notification.createdAt,
-        updatedAt: notification.updatedAt
-      }, null, 2));
+        senderId: notification.senderId,
+        recipientCount: notification.recipientCount
+      });
 
       // Check the sent messages endpoint
-      console.log('\nVerifying sent messages endpoint...');
+      logger.info('Verifying sent messages endpoint');
       const sentMessages = await sequelize.models.Notification.findAll({
         where: { 
           type: 'email',
@@ -77,22 +118,23 @@ async function testSendMessage() {
         limit: 1
       });
 
-      console.log('\nFound matching notifications in database:');
-      console.log(JSON.stringify(sentMessages.map(n => ({
-        id: n.id,
-        subject: n.subject,
-        recipientGroups: n.metadata?.recipientGroup || [],
-        totalRecipients: n.metadata?.recipientCount || 0,
-        isBatch: n.metadata?.isBatch || false,
-        createdAt: n.createdAt
-      })), null, 2));
+      logger.debug('Found notifications in database', {
+        count: sentMessages.length,
+        notifications: sentMessages.map(n => ({
+          id: n.id,
+          subject: n.subject,
+          status: n.status,
+          senderId: n.senderId,
+          recipientCount: n.recipientCount
+        }))
+      });
     }
 
   } catch (error) {
-    console.error('Error in test:', error);
-    if (error.errors) {
-      console.error('Validation errors:', error.errors.map(e => e.message));
-    }
+    logger.error('Test script failed', error, {
+      step: 'send-test-message',
+      userId: TEST_CONFIG.adminUserId
+    });
   } finally {
     await sequelize.close();
     process.exit(0);

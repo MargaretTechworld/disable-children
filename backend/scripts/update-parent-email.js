@@ -1,11 +1,33 @@
 const { User, Child } = require('../models');
 const sequelize = require('../config/database');
 
+// Logger utility for consistent logging
+const logger = {
+  info: (message, data = {}) => {
+    console.info('Script Info:', {
+      script: 'update-parent-email',
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  error: (message, error, data = {}) => {
+    console.error('Script Error:', {
+      script: 'update-parent-email',
+      message,
+      error: error?.message || error,
+      stack: error?.stack,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
 async function updateParentEmail(userId, newEmail) {
   const transaction = await sequelize.transaction();
   
   try {
-    console.log(`Updating email for user ID ${userId} to ${newEmail}...`);
+    logger.info('Starting email update', { userId, newEmail });
     
     // 1. Update the User record
     const [updatedUsers] = await User.update(
@@ -31,13 +53,16 @@ async function updateParentEmail(userId, newEmail) {
     
     await transaction.commit();
     
-    console.log(`Successfully updated email to ${newEmail} for:`);
-    console.log(`- User ID: ${userId}`);
-    console.log(`- ${updatedChildren} child record(s)`);
+    logger.info('Email update completed', {
+      userId,
+      newEmail,
+      updatedChildrenCount: updatedChildren,
+      status: 'success'
+    });
     
   } catch (error) {
     await transaction.rollback();
-    console.error('Error updating email:', error.message);
+    logger.error('Failed to update email', error, { userId, newEmail });
     process.exit(1);
   }
 }
@@ -45,15 +70,21 @@ async function updateParentEmail(userId, newEmail) {
 // Get command line arguments
 const args = process.argv.slice(2);
 if (args.length !== 2) {
-  console.log('Usage: node update-parent-email.js <userId> <newEmail>');
-  process.exit(1);
+  const showUsage = () => {
+    logger.info('Usage:', { 
+      script: 'update-parent-email',
+      command: 'node update-parent-email.js <userId> <newEmail>'
+    });
+    process.exit(1);
+  };
+  showUsage();
 }
 
 const userId = parseInt(args[0], 10);
 const newEmail = args[1];
 
 if (isNaN(userId)) {
-  console.error('Error: userId must be a number');
+  logger.error('Invalid user ID', new Error('User ID must be a number'), { userId });
   process.exit(1);
 }
 
@@ -61,6 +92,6 @@ if (isNaN(userId)) {
 sequelize.authenticate()
   .then(() => updateParentEmail(userId, newEmail))
   .catch(error => {
-    console.error('Database connection error:', error);
+    logger.error('Database connection error', error);
     process.exit(1);
   });

@@ -1,17 +1,65 @@
 const { sequelize } = require('../models');
 const NotificationService = require('../services/notificationService');
 
+// Logger utility for consistent logging
+const logger = {
+  info: (message, data = {}) => {
+    console.info('Test Script Info:', {
+      script: 'test-message-all-parents',
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  debug: (message, data = {}) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Test Script Debug:', {
+        script: 'test-message-all-parents',
+        message,
+        ...data,
+        timestamp: new Date().toISOString()
+      });
+    }
+  },
+  error: (message, error, data = {}) => {
+    console.error('Test Script Error:', {
+      script: 'test-message-all-parents',
+      message,
+      error: error?.message || error,
+      stack: error?.stack,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  success: (message, data = {}) => {
+    console.info('Test Script Success:', {
+      script: 'test-message-all-parents',
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  warn: (message, data = {}) => {
+    console.warn('Test Script Warning:', {
+      script: 'test-message-all-parents',
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
 async function testMessageAllParents() {
   try {
-    console.log('Starting test: Send message to all parents');
+    logger.info('Starting test: Send message to all parents');
     
     // Connect to database
     await sequelize.authenticate();
-    console.log('Database connection established');
+    logger.info('Database connection established');
     
     // Sync models if needed
     await sequelize.sync();
-    console.log('Database synced');
+    logger.info('Database synced');
     
     // Test message details
     const messageDetails = {
@@ -32,31 +80,46 @@ async function testMessageAllParents() {
       senderId: 1 // Assuming admin user ID is 1
     };
     
-    console.log('Sending message to all parents...');
+    logger.info('Sending message to all parents', {
+      senderId: messageDetails.senderId,
+      messageType: 'test-broadcast'
+    });
     const result = await NotificationService.sendMessageToAllParents(messageDetails);
     
-    console.log('\nTest Results:');
-    console.log('=============');
-    console.log(`Status: ${result.success ? 'SUCCESS' : 'FAILED'}`);
-    console.log(`Message: ${result.message}`);
-    console.log('\nStatistics:');
-    console.log(`Total parents: ${result.stats.total}`);
-    console.log(`Successfully sent: ${result.stats.success}`);
-    console.log(`Failed: ${result.stats.failed}`);
+    logger.info('Message sent result', {
+      success: result.success,
+      messageId: result.messageId,
+      recipientCount: result.recipients?.length || 0
+    });
+    
+    logger.info('\nTest Results:');
+    logger.info('=============');
+    logger.info(`Status: ${result.success ? 'SUCCESS' : 'FAILED'}`);
+    logger.info(`Message: ${result.message}`);
+    logger.info('\nStatistics:');
+    logger.info(`Total parents: ${result.stats.total}`);
+    logger.info(`Successfully sent: ${result.stats.success}`);
+    logger.info(`Failed: ${result.stats.failed}`);
     
     if (result.stats.errors.length > 0) {
-      console.log('\nErrors:');
+      logger.info('\nErrors:');
       result.stats.errors.forEach((error, index) => {
-        console.log(`${index + 1}. ${error.email}: ${error.error}`);
+        logger.info(`${index + 1}. ${error.email}: ${error.error}`);
       });
     }
     
   } catch (error) {
-    console.error('Test failed with error:', error);
+    logger.error('Test failed', error, {
+      step: 'send-message-to-all-parents',
+      userId: 1
+    });
   } finally {
     // Close the database connection
     await sequelize.close();
-    console.log('\nTest completed');
+    logger.info('Test execution completed', {
+      status: result?.success ? 'success' : 'failed',
+      timestamp: new Date().toISOString()
+    });
   }
 }
 

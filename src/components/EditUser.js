@@ -83,8 +83,6 @@ const EditUser = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        console.log('Fetching user with ID:', userId);
-        
         const response = await api.get(`/users/${userId}`);
         const userData = response.data;
         
@@ -98,7 +96,12 @@ const EditUser = () => {
         
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching user:', err);
+        console.error('Error fetching user:', {
+          message: err.message,
+          status: err.response?.status,
+          data: err.response?.data,
+          stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        });
         setError(err.response?.data?.message || 'Failed to fetch user data');
         setLoading(false);
       }
@@ -133,7 +136,12 @@ const EditUser = () => {
         navigate('/dashboard/user-management');
       }, 1500);
     } catch (err) {
-      console.error('Error updating user:', err);
+      console.error('Error updating user:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      });
       setError(err.response?.data?.message || 'Failed to update user');
     } finally {
       setLoading(false);
@@ -153,7 +161,12 @@ const EditUser = () => {
       
       setSuccess('Password reset email sent successfully');
     } catch (err) {
-      console.error('Error resetting password:', err);
+      console.error('Error resetting password:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      });
       setError(err.response?.data?.message || 'Failed to reset password');
     } finally {
       setIsResetting(false);

@@ -2,9 +2,60 @@ const { User } = require('../models');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
+// Logger utility for consistent logging
+const logger = {
+  info: (message, data = {}) => {
+    console.info('Script Info:', {
+      script: 'resetAllAdminPasswords',
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  debug: (message, data = {}) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Script Debug:', {
+        script: 'resetAllAdminPasswords',
+        message,
+        ...data,
+        timestamp: new Date().toISOString()
+      });
+    }
+  },
+  error: (message, error, data = {}) => {
+    console.error('Script Error:', {
+      script: 'resetAllAdminPasswords',
+      message,
+      error: error?.message || error,
+      stack: error?.stack,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  table: (data, columns) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.table(data, columns);
+    } else {
+      logger.info('Tabular data', { data, columns });
+    }
+  },
+  warn: (message, data = {}) => {
+    console.warn('Script Warning:', {
+      script: 'resetAllAdminPasswords',
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
 async function resetAdminPasswords() {
   try {
-    console.log('🔍 Finding all admin users...');
+    logger.info('Starting admin password reset process', {
+      operation: 'reset-all-admin-passwords'
+    });
+    
+    logger.info('Finding all admin users...');
     
     // Find all admin users except margarettechwld@gmail.com
     const admins = await User.findAll({
@@ -18,23 +69,28 @@ async function resetAdminPasswords() {
     });
 
     if (admins.length === 0) {
-      console.log('ℹ️ No admin users found to reset (excluding margarettechwld@gmail.com)');
+      logger.warn('No admin users found to reset (excluding margarettechwld@gmail.com)');
       return;
     }
 
-    console.log(`\n🔧 Resetting passwords for ${admins.length} admin users:`);
-    console.table(admins.map(admin => ({
+    logger.info(`Found ${admins.length} admin users`, {
+      adminCount: admins.length
+    });
+
+    logger.info('Resetting passwords for admin users');
+    logger.table(admins.map(admin => ({
       id: admin.id,
       email: admin.email,
       name: `${admin.firstName} ${admin.lastName}`,
       role: admin.role
-    })));
+    })), ['id', 'email', 'name', 'role']);
 
     const newPassword = 'AdminReset123!';
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     
     // Update all admin passwords in a single transaction
+    logger.info('Starting database transaction');
     const updated = await User.update(
       { 
         password: hashedPassword,
@@ -49,23 +105,36 @@ async function resetAdminPasswords() {
       }
     );
 
-    console.log(`\n✅ Successfully reset passwords for ${updated[0]} admin accounts`);
-    console.log('\n📋 Login credentials for reset accounts:');
-    admins.forEach(admin => {
-      console.log(`- Email: ${admin.email}`);
-      console.log(`  Password: ${newPassword}`);
-      console.log('  --------------------');
+    logger.info('Transaction committed successfully');
+    logger.info(`Updated passwords for ${updated[0]} admin users`, {
+      adminsUpdated: updated[0]
     });
 
-    console.log(`\n🔐 Please change these passwords immediately after logging in.`);
-    console.log(`ℹ️ Note: margarettechwld@gmail.com was not modified.`);
+    logger.info('Login credentials for reset accounts:');
+    admins.forEach(admin => {
+      logger.info(`Updated password for admin user`, {
+        userId: admin.id,
+        email: admin.email
+      });
+      logger.info(`- Email: ${admin.email}`);
+      logger.info(`  Password: ${newPassword}`);
+      logger.info('  --------------------');
+    });
+
+    logger.info('Please change these passwords immediately after logging in.');
+    logger.info('Note: margarettechwld@gmail.com was not modified.');
     
   } catch (error) {
-    console.error('❌ Error resetting admin passwords:', error);
+    logger.error('Failed to reset admin passwords', error, {
+      step: 'reset-all-admin-passwords'
+    });
   } finally {
+    logger.info('Reset all admin passwords operation completed', {
+      status: 'completed',
+      timestamp: new Date().toISOString()
+    });
     process.exit();
   }
 }
 
-console.log('🚀 Starting admin password reset process...');
 resetAdminPasswords();

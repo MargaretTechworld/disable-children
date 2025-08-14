@@ -27,37 +27,27 @@ router.get('/me', getMe);
 // Password update route (available to all authenticated users for their own account)
 router.put('/:id/password', async (req, res, next) => {
   try {
-    // Debug log the entire request
-    console.log('Password update request received:', {
-      method: req.method,
-      url: req.originalUrl,
-      params: req.params,
-      user: req.user,
-      headers: {
-        'x-auth-token': req.headers['x-auth-token'] ? 'Token exists' : 'No token',
-        'content-type': req.headers['content-type']
-      }
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Users Route Debug:', {
+        method: req.method,
+        path: req.originalUrl,
+        userId: req.user?.id,
+        action: 'password_update',
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // Get user IDs from token and params
     const userIdFromToken = req.user?.id;
     const userIdFromParams = req.params.id;
     
-    // Debug log with types
-    console.log('User ID from token:', {
-      value: userIdFromToken,
-      type: typeof userIdFromToken
-    });
-    console.log('User ID from params:', {
-      value: userIdFromParams,
-      type: typeof userIdFromParams
-    });
-    
-    // Only allow users to update their own password
-    if (String(userIdFromToken) !== String(userIdFromParams)) {
-      console.log('User ID mismatch - Not authorized');
-      console.log('Token user ID:', userIdFromToken);
-      console.log('Requested user ID:', userIdFromParams);
+    if (userIdFromToken !== userIdFromParams) {
+      console.warn('Users Route Warning:', {
+        message: 'User ID mismatch - Not authorized',
+        tokenUserId: userIdFromToken,
+        requestedUserId: userIdFromParams,
+        timestamp: new Date().toISOString()
+      });
       return res.status(403).json({ 
         success: false,
         message: 'Not authorized to update this user\'s password',

@@ -44,20 +44,43 @@ app.use('/api/notifications', notificationRoutes);
 // Initialize Socket.IO
 initializeSocket(io);
 
+// Logger utility for consistent logging
+const logger = {
+  info: (message, data = {}) => {
+    console.info('Server Info:', {
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  error: (message, error, data = {}) => {
+    console.error('Server Error:', {
+      message,
+      error: error?.message || error,
+      stack: error?.stack,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
 // Test DB Connection and Sync Models
 sequelize.authenticate()
   .then(() => {
-    console.log('MySQL Database connected successfully.');
+    logger.info('Database connection established successfully');
     // Sync all models
     return sequelize.sync(); 
   })
   .then(() => {
     server.listen(port, () => {
-      console.log(`Server is running on port: ${port}`);
+      logger.info(`Server started and listening on port ${port}`, { 
+        environment: process.env.NODE_ENV || 'development',
+        nodeVersion: process.version
+      });
     });
   })
   .catch(err => {
-    console.error('Unable to connect to the database:', err);
+    logger.error('Database connection error', err);
   });
 
   // Test email route
@@ -71,7 +94,7 @@ app.get('/api/test-email', async (req, res) => {
     });
     res.json({ success: true, message: 'Test email sent' });
   } catch (error) {
-    console.error('Test email error:', error);
+    logger.error('Test email error', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

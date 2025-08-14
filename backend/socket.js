@@ -1,19 +1,48 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('./models'); // Import User model from models/index.js
 
+// Logger utility for consistent logging
+const logger = {
+  info: (message, data = {}) => {
+    console.info('Socket.IO Info:', {
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  debug: (message, data = {}) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Socket.IO Debug:', {
+        message,
+        ...data,
+        timestamp: new Date().toISOString()
+      });
+    }
+  },
+  error: (message, error, data = {}) => {
+    console.error('Socket.IO Error:', {
+      message,
+      error: error?.message || error,
+      stack: error?.stack,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
 const initializeSocket = (io) => {
   // Middleware for authenticating socket connections
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token;
       if (!token) {
-        console.error('Socket connection attempt without token');
+        logger.error('Socket connection attempt without token', new Error('No token provided'), { socketId: socket.id });
         return next(new Error('Authentication error: No token provided.'));
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       if (!decoded?.user?.id) {
-        console.error('Invalid token payload:', decoded);
+        logger.error('Invalid token payload', new Error('Invalid token structure'), { decoded });
         return next(new Error('Authentication error: Invalid token structure.'));
       }
 
@@ -23,28 +52,42 @@ const initializeSocket = (io) => {
       });
 
       if (!user) {
-        console.error('User not found for socket connection:', decoded.user.id);
+        logger.error('User not found for socket connection', new Error('User not found'), { userId: decoded.user.id });
         return next(new Error('Authentication error: User not found.'));
       }
 
       // Attach user info to the socket
       socket.user = user.get({ plain: true });
-      console.log(`Socket authenticated for user: ${user.email} (${user.role})`);
+      logger.info('Socket authenticated', { 
+        userId: user.id, 
+        email: user.email, 
+        role: user.role 
+      });
       next();
     } catch (error) {
-      console.error('Socket authentication error:', error.message);
+      logger.error('Socket authentication error', error, { socketId: socket.id });
       return next(new Error(`Authentication error: ${error.message}`));
     }
   });
 
   io.on('connection', (socket) => {
-    console.log(`User connected: ${socket.user?.firstName || 'Unknown'} (${socket.user?.role || 'unknown'})`);
+    logger.debug('User connected', { 
+      userId: socket.user?.id,
+      name: socket.user?.firstName || 'Unknown',
+      role: socket.user?.role || 'unknown',
+      socketId: socket.id
+    });
 
     // Join rooms based on role
     if (socket.user?.role) {
       const userRoom = socket.user.role === 'super_admin' ? 'super_admin_room' : 'admins_room';
       socket.join(userRoom);
-      console.log(`${socket.user.firstName} joined room: ${userRoom}`);
+      logger.debug('User joined room', {
+        userId: socket.user.id,
+        name: socket.user.firstName,
+        room: userRoom,
+        socketId: socket.id
+      });
     }
 
     // Handle incoming chat messages
@@ -72,7 +115,7 @@ const initializeSocket = (io) => {
           callback({ status: 'Message sent' });
         }
       } catch (error) {
-        console.error('Error handling chat message:', error);
+        logger.error('Error handling chat message', error, { socketId: socket.id });
         if (typeof callback === 'function') {
           callback({ error: error.message });
         }
@@ -80,8 +123,13 @@ const initializeSocket = (io) => {
     });
 
     // Handle disconnection
-    socket.on('disconnect', () => {
-      console.log(`User disconnected: ${socket.user?.email || 'Unknown'}`);
+    socket.on('disconnect', (reason) => {
+      logger.debug('User disconnected', {
+        userId: socket.user?.id,
+        email: socket.user?.email || 'Unknown',
+        socketId: socket.id,
+        reason: reason || 'client disconnected'
+      });
     });
   });
 

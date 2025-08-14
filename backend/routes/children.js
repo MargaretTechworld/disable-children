@@ -1,3 +1,23 @@
+// Logger utility for consistent logging
+const logger = {
+  debug: (message, data = {}) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Children Route Debug:', {
+        message,
+        ...data,
+        timestamp: new Date().toISOString()
+      });
+    }
+  },
+  warn: (message, data = {}) => {
+    console.warn('Children Route Warning:', {
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
 const express = require('express');
 const router = express.Router();
 const { getAllChildren, addChild, updateChild, deleteChild } = require('../controllers/childController');
@@ -34,11 +54,11 @@ router.delete('/:id', auth, deleteChild);
  */
 router.get('/disability-types', auth, role.isAdmin, async (req, res) => {
   try {
-    console.log('Fetching disability types from database...');
+    logger.debug('Fetching disability types from database...');
     
     // First, check if there are any children records
     const childCount = await Child.count();
-    console.log(`Total children records in database: ${childCount}`);
+    logger.debug(`Total children records in database: ${childCount}`);
     
     // Get all distinct disability types
     const disabilityTypes = await Child.findAll({
@@ -56,28 +76,28 @@ router.get('/disability-types', auth, role.isAdmin, async (req, res) => {
       raw: true
     });
 
-    console.log('Raw disability types from database:', JSON.stringify(disabilityTypes, null, 2));
+    logger.debug('Raw disability types from database:', JSON.stringify(disabilityTypes, null, 2));
     
     // Extract just the disability type strings and filter out any null/empty values
     const types = disabilityTypes
       .map(item => item.disabilityType)
       .filter(Boolean);
       
-    console.log('Processed disability types:', types);
+    logger.debug('Processed disability types:', types);
 
     if (types.length === 0) {
-      console.warn('No disability types found in the database. Please check if the children table has data.');
+      logger.warn('No disability types found in the database. Please check if the children table has data.');
       // Try a more permissive query to see what values exist
       const allValues = await Child.findAll({
         attributes: ['disabilityType'],
         raw: true
       });
-      console.log('All disabilityType values in database:', JSON.stringify(allValues, null, 2));
+      logger.debug('All disabilityType values in database:', JSON.stringify(allValues, null, 2));
     }
 
     res.json(types);
   } catch (error) {
-    console.error('Error fetching disability types:', error);
+    logger.warn('Error fetching disability types:', error);
     res.status(500).json({ 
       message: 'Error fetching disability types',
       error: error.message,
@@ -93,7 +113,7 @@ router.get('/disability-types', auth, role.isAdmin, async (req, res) => {
  */
 router.get('/debug/disability-types', auth, role.isAdmin, async (req, res) => {
   try {
-    console.log('Debug: Fetching all children records...');
+    logger.debug('Debug: Fetching all children records...');
     
     // Get all children with their disability types
     const allChildren = await Child.findAll({
@@ -102,7 +122,7 @@ router.get('/debug/disability-types', auth, role.isAdmin, async (req, res) => {
       order: [['disabilityType', 'ASC']]
     });
     
-    console.log(`Found ${allChildren.length} children records`);
+    logger.debug(`Found ${allChildren.length} children records`);
     
     // Count records by disability type
     const typeCounts = allChildren.reduce((acc, child) => {
@@ -111,11 +131,11 @@ router.get('/debug/disability-types', auth, role.isAdmin, async (req, res) => {
       return acc;
     }, {});
     
-    console.log('Disability type distribution:', JSON.stringify(typeCounts, null, 2));
+    logger.debug('Disability type distribution:', JSON.stringify(typeCounts, null, 2));
     
     // Get all unique disability types
     const uniqueTypes = [...new Set(allChildren.map(c => c.disabilityType).filter(Boolean))];
-    console.log('Unique disability types:', uniqueTypes);
+    logger.debug('Unique disability types:', uniqueTypes);
     
     res.json({
       totalChildren: allChildren.length,
@@ -125,7 +145,7 @@ router.get('/debug/disability-types', auth, role.isAdmin, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Debug error:', error);
+    logger.warn('Debug error:', error);
     res.status(500).json({
       message: 'Debug error',
       error: error.message,
@@ -183,7 +203,7 @@ router.get('/debug/disability-data', auth, role.isAdmin, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Debug error:', error);
+    logger.warn('Debug error:', error);
     res.status(500).json({
       message: 'Debug error',
       error: error.message,

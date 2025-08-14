@@ -24,9 +24,6 @@ const DISABILITY_DISPLAY_NAMES = {
 
 // Log all requests to the notifications routes
 router.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  console.log('Request Headers:', req.headers);
-  console.log('Request Body:', req.body);
   next();
 });
 
@@ -44,12 +41,14 @@ router.get('/recipient-count',
       .isString()
   ],
   async (req, res) => {
-    console.log('Received request to /api/notifications/recipient-count');
-    console.log('Request query:', req.query);
-    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.error('Validation errors:', errors.array());
+      console.error('Error in notifications route:', {
+        endpoint: req.originalUrl,
+        method: req.method,
+        error: errors.array(),
+        stack: process.env.NODE_ENV === 'development' ? errors.array().map(error => error.msg) : undefined
+      });
       return res.status(400).json({ errors: errors.array() });
     }
 
@@ -63,19 +62,17 @@ router.get('/recipient-count',
           .filter(item => item.length > 0);
       }
 
-      console.log('Processed disability types:', disabilityTypes);
-      
-      if (disabilityTypes.length === 0) {
-        console.log('No disability types provided, will count all parents with children');
-      }
-      
       // Get count using the notification service
       const count = await NotificationService.getParentCountByDisabilities(disabilityTypes);
       
-      console.log('Recipient count:', count);
       res.json({ count });
     } catch (error) {
-      console.error('Error getting recipient count:', error);
+      console.error('Error in notifications route:', {
+        endpoint: req.originalUrl,
+        method: req.method,
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
       res.status(500).json({ 
         message: 'Server error',
         error: error.message 
@@ -101,25 +98,20 @@ router.post(
       .isArray()
   ],
   async (req, res) => {
-    console.log('Received request to /api/notifications/send-to-parents');
-    console.log('Request body:', req.body);
-    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.error('Validation errors:', errors.array());
+      console.error('Error in notifications route:', {
+        endpoint: req.originalUrl,
+        method: req.method,
+        error: errors.array(),
+        stack: process.env.NODE_ENV === 'development' ? errors.array().map(error => error.msg) : undefined
+      });
       return res.status(400).json({ errors: errors.array() });
     }
 
     try {
       const { subject, message, disabilityTypes = [] } = req.body;
       const senderId = req.user.id;
-
-      console.log('Sending message with data:', {
-        subject,
-        message: message.substring(0, 50) + '...', // Log first 50 chars of message
-        disabilityTypes,
-        senderId
-      });
 
       // Send message using the notification service
       const result = await NotificationService.sendMessageToAllParents({
@@ -128,8 +120,6 @@ router.post(
         senderId,
         disabilityTypes
       });
-
-      console.log('Message send result:', result);
 
       if (!result.success) {
         if (result.error === 'NO_PARENTS_FOUND') {
@@ -156,7 +146,12 @@ router.post(
         notificationId: result.notificationId
       });
     } catch (error) {
-      console.error('Error sending message to parents:', error);
+      console.error('Error in notifications route:', {
+        endpoint: req.originalUrl,
+        method: req.method,
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
       res.status(500).json({ 
         success: false,
         message: 'Failed to send message',
@@ -186,6 +181,12 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.error('Error in notifications route:', {
+        endpoint: req.originalUrl,
+        method: req.method,
+        error: errors.array(),
+        stack: process.env.NODE_ENV === 'development' ? errors.array().map(error => error.msg) : undefined
+      });
       return res.status(400).json({ errors: errors.array() });
     }
 
@@ -221,7 +222,12 @@ router.post(
         data: notification
       });
     } catch (error) {
-      console.error('Error sending notification:', error);
+      console.error('Error in notifications route:', {
+        endpoint: req.originalUrl,
+        method: req.method,
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
       res.status(500).json({
         success: false,
         message: 'Server error',
@@ -237,12 +243,9 @@ router.post(
  * @access  Private/Admin
  */
 router.get('/sent', auth, isAdmin, async (req, res) => {
-  console.log(`[/api/notifications/sent] Request received for user: ${req.user.id}`);
-  
   try {
     const sequelize = require('../config/database');
     await sequelize.authenticate();
-    console.log('[/api/notifications/sent] Database connection established successfully');
     
     // Get all sent notifications for all admins
     const notifications = await Notification.findAll({
@@ -257,14 +260,9 @@ router.get('/sent', auth, isAdmin, async (req, res) => {
           attributes: ['id', 'firstName', 'lastName', 'email', 'role'],
           required: false
         }
-      ],
-      logging: (sql) => {
-        console.log('[/api/notifications/sent] Executing SQL:', sql);
-      }
+      ]
     });
 
-    console.log(`[/api/notifications/sent] Found ${notifications.length} notifications`);
-    
     // Process the notifications to include recipient groups and counts
     const processedNotifications = notifications.map(notification => {
       const metadata = notification.metadata || {};
@@ -310,7 +308,12 @@ router.get('/sent', auth, isAdmin, async (req, res) => {
       data: processedNotifications
     });
   } catch (error) {
-    console.error('[/api/notifications/sent] Error:', error);
+    console.error('Database error in notifications route:', {
+      endpoint: req.originalUrl,
+      method: req.method,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
     res.status(500).json({
       success: false,
       message: 'Error fetching sent notifications',
@@ -373,7 +376,12 @@ router.get('/sent/:id', auth, isAdmin, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching notification:', error);
+    console.error('Error in notifications route:', {
+      endpoint: req.originalUrl,
+      method: req.method,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
     res.status(500).json({
       success: false,
       message: 'Error fetching notification',
@@ -410,7 +418,12 @@ router.delete('/sent/:id', auth, isAdmin, async (req, res) => {
       message: 'Notification deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting notification:', error);
+    console.error('Error in notifications route:', {
+      endpoint: req.originalUrl,
+      method: req.method,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
     res.status(500).json({
       success: false,
       message: 'Server error',
@@ -423,9 +436,14 @@ router.delete('/sent/:id', auth, isAdmin, async (req, res) => {
 router.use((req, res, next) => {
   const originalSend = res.send;
   res.send = function(body) {
-    console.log(`[${new Date().toISOString()}] Response for ${req.method} ${req.originalUrl}:`);
-    console.log('Status Code:', res.statusCode);
-    console.log('Response Body:', typeof body === 'string' ? body.substring(0, 200) + '...' : body);
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Notifications Route Debug:', {
+        method: req.method,
+        path: req.originalUrl,
+        statusCode: res.statusCode,
+        timestamp: new Date().toISOString()
+      });
+    }
     originalSend.call(this, body);
   };
   next();

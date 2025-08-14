@@ -39,6 +39,7 @@
   
   .cardBox .card:hover {
     background: var(--primary-color);
+    color: var(--white);
     transform: translateY(-5px);
   }
   .cardBox .card:hover .numbers,

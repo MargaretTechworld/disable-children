@@ -36,13 +36,23 @@ api.interceptors.response.use(
   async (error) => {
     // Handle network errors
     if (error.code === 'ERR_NETWORK') {
-      console.error('Network Error:', error);
+      console.error('API Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
       // You might want to show a network error message to the user
     }
     
     // Handle 401 Unauthorized
     if (error.response?.status === 401) {
-      console.error('Authentication failed:', error);
+      console.error('API Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
       // Clear any invalid tokens
       localStorage.removeItem('token');
       // You might want to redirect to login page here

@@ -28,7 +28,12 @@ export const AuthProvider = ({ children }) => {
       }
       return null;
     } catch (error) {
-      console.error('Error fetching user:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
       localStorage.removeItem('token');
       setUser(null);
       setError(error.response?.data?.message || 'Failed to fetch user data');
@@ -95,7 +100,12 @@ export const AuthProvider = ({ children }) => {
       };
       
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
       const errorMessage = error.response?.data?.message || 'An unexpected error occurred. Please try again.';
       setLoginError(errorMessage);
       return { 

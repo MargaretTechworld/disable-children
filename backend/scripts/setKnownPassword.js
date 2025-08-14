@@ -2,19 +2,72 @@ const { User } = require('../models');
 const { sequelize } = require('../models');
 const bcrypt = require('bcryptjs');
 
+// Logger utility for consistent logging
+const logger = {
+  info: (message, data = {}) => {
+    console.info('Script Info:', {
+      script: 'setKnownPassword',
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  debug: (message, data = {}) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Script Debug:', {
+        script: 'setKnownPassword',
+        message,
+        ...data,
+        timestamp: new Date().toISOString()
+      });
+    }
+  },
+  error: (message, error, data = {}) => {
+    console.error('Script Error:', {
+      script: 'setKnownPassword',
+      message,
+      error: error?.message || error,
+      stack: error?.stack,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  table: (data, columns) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.table(data, columns);
+    } else {
+      logger.info('Tabular data', { data, columns });
+    }
+  },
+  warn: (message, data = {}) => {
+    console.warn('Script Warning:', {
+      script: 'setKnownPassword',
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
 async function setKnownPassword(email, newPassword) {
   try {
+    logger.info('Starting to set known password', {
+      operation: 'set-known-password',
+      targetEmail: email
+    });
+
     await sequelize.authenticate();
-    console.log('Connection has been established successfully.');
-    
+    logger.info('Database connection established');
+
     // Manually hash the password
+    logger.info('Hashing known password');
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
-    
-    console.log('Generated hash:', hashedPassword);
-    
-    console.log('Updating password in database...');
-    
+
+    logger.info('Generated hash', { hash: hashedPassword });
+
+    logger.info('Updating password in database');
+
     // Update the user's password directly in the database
     const [updated] = await sequelize.query(
       `UPDATE users SET password = :password WHERE email = :email`,
@@ -26,13 +79,15 @@ async function setKnownPassword(email, newPassword) {
         type: sequelize.QueryTypes.UPDATE
       }
     );
-    
-    console.log('Update result:', updated);
-    
+
+    logger.info('Update result', { updated });
+
     if (updated > 0) {
-      console.log(`\n✅ Password for ${email} has been reset successfully.`);
-      console.log(`🔑 New password: ${newPassword}\n`);
-      
+      logger.info(`Successfully set known password`, {
+        email,
+        userId: updated
+      });
+
       // Verify the update
       const user = await sequelize.query(
         `SELECT email, SUBSTRING(password, 1, 10) as hash_prefix, LENGTH(password) as hash_length FROM users WHERE email = :email`,
@@ -41,21 +96,29 @@ async function setKnownPassword(email, newPassword) {
           type: sequelize.QueryTypes.SELECT
         }
       );
-      
+
       if (user.length > 0) {
-        console.log('Verification successful:');
-        console.log('Email:', user[0].email);
-        console.log('Hash prefix:', user[0].hash_prefix + '...');
-        console.log('Hash length:', user[0].hash_length);
+        logger.info('Verification successful', {
+          email: user[0].email,
+          hashPrefix: user[0].hash_prefix,
+          hashLength: user[0].hash_length
+        });
       }
     } else {
-      console.log('❌ User not found or password not updated.');
+      logger.warn('User not found', { email });
     }
-    
+
   } catch (error) {
-    console.error('❌ Error updating password:', error);
+    logger.error('Failed to set known password', error, {
+      step: 'set-known-password',
+      email
+    });
   } finally {
     await sequelize.close();
+    logger.info('Set known password operation completed', {
+      status: 'completed',
+      timestamp: new Date().toISOString()
+    });
   }
 }
 
@@ -64,9 +127,9 @@ const email = process.argv[2] || 'janede@example.com';
 const newPassword = 'SecurePass123!'; // This is the password we'll set
 
 if (!email) {
-  console.error('Please provide an email address');
+  logger.error('Email address not provided');
   process.exit(1);
 }
 
-console.log(`\n🔄 Setting new password for: ${email}`);
+logger.info(`Setting new password for: ${email}`);
 setKnownPassword(email, newPassword);

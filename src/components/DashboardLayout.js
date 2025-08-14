@@ -13,18 +13,14 @@ const DashboardLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1025);
 
-  // Log the user to check its structure
   useEffect(() => {
-    console.log('Current User:', user);
   }, [user]);
 
-  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       const isMobileView = window.innerWidth < 1025;
       setIsMobile(isMobileView);
       
-      // Close sidebar when switching to mobile view if it was open
       if (isMobileView && isSidebarOpen) {
         setIsSidebarOpen(false);
       }
@@ -34,7 +30,6 @@ const DashboardLayout = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [isSidebarOpen]);
 
-  // Close sidebar if open when route changes (mobile)
   useEffect(() => {
     if (isMobile && isSidebarOpen) {
       setIsSidebarOpen(false);
@@ -54,7 +49,6 @@ const DashboardLayout = () => {
     }
   };
 
-  // If no user, redirect to login
   if (!user) {
     navigate('/login');
     return null;

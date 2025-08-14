@@ -27,10 +27,7 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
-    console.log('Settings - User data:', user);
-    console.log('User name:', user?.name);
-    console.log('User email:', user?.email);
-    console.log('User role:', user?.role);
+    // No-op effect
   }, [user]);
 
   useEffect(() => {
@@ -76,9 +73,6 @@ const Settings = () => {
       if (!user || !user.id) {
         throw new Error('User information not available. Please refresh the page and try again.');
       }
-
-      console.log('Attempting to update password for user ID:', user.id);
-      console.log('Token being sent:', token ? 'Token exists' : 'No token');
 
       const response = await axios.put(
         `http://localhost:5000/api/users/${user.id}/password`,

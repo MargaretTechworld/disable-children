@@ -730,6 +730,7 @@ const AdminMessageCenter = ({ user }) => {
     message: '',
     severity: 'success'
   });
+
 // Add these functions before the useEffect hooks
 
 const fetchDisabilityTypes = async () => {
@@ -762,7 +763,6 @@ const fetchRecipientCount = async (disabilities = []) => {
 
     // Only proceed if we have disabilities to check
     if (safeDisabilities.length === 0) {
-      console.log('No disabilities to check, returning 0');
       return 0;
     }
 
@@ -777,14 +777,8 @@ const fetchRecipientCount = async (disabilities = []) => {
       withCredentials: true
     });
 
-    console.log('API response:', response.data);
     return response.data.count || 0;
   } catch (error) {
-    console.error('Error in fetchRecipientCount:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
-    });
     throw error;
   }
 };
@@ -802,7 +796,6 @@ useEffect(() => {
       const count = await fetchRecipientCount(selectedDisabilities);
       setRecipientCount(count);
     } catch (error) {
-      console.error('Error updating recipient count:', error);
       setRecipientCount('Error');
     } finally {
       setIsLoadingCount(false);
@@ -871,7 +864,6 @@ useEffect(() => {
   const fetchSentMessages = useCallback(async () => {
     setIsLoadingSent(true);
     try {
-      console.log('Fetching sent messages from:', ENDPOINTS.SENT_MESSAGES);
       const token = localStorage.getItem('token');
       
       const response = await axios.get(ENDPOINTS.SENT_MESSAGES, {
@@ -882,18 +874,7 @@ useEffect(() => {
         withCredentials: true
       });
       
-      console.log('Sent messages response status:', response.status);
-      console.log('Sent messages raw data:', JSON.stringify(response.data, null, 2));
-      
-      // Log the first message's structure if available
-      if (response.data && response.data.data && response.data.data.length > 0) {
-        console.log('First message in response:', JSON.stringify(response.data.data[0], null, 2));
-        console.log('First message recipientGroups:', response.data.data[0].recipientGroups);
-        console.log('First message metadata:', response.data.data[0].metadata);
-      }
-      
       const messages = Array.isArray(response.data?.data) ? response.data.data : [];
-      console.log('Processed messages count:', messages.length);
       
       // Ensure recipientGroups is properly set for each message
       const processedMessages = messages.map(msg => ({
@@ -908,29 +889,13 @@ useEffect(() => {
                         1
       }));
       
-      console.log('Processed messages with recipient groups:', 
-        processedMessages.map(m => ({
-          id: m.id,
-          subject: m.subject,
-          recipientGroups: m.recipientGroups,
-          totalRecipients: m.totalRecipients
-        }))
-      );
-      
       setSentMessages(processedMessages);
     } catch (error) {
-      console.error('Error fetching sent messages:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      
       setSnackbar({
         open: true,
         message: `Error: ${error.response?.data?.message || error.message}`,
         severity: 'error'
       });
-      
       setSentMessages([]);
     } finally {
       setIsLoadingSent(false);
@@ -1003,12 +968,6 @@ useEffect(() => {
       setActiveTab(1);
   
     } catch (error) {
-      console.error('Error sending message:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      
       setSnackbar({
         open: true,
         message: `Error: ${error.response?.data?.message || error.message || 'Failed to send message'}`,
@@ -1050,7 +1009,6 @@ useEffect(() => {
       fetchSentMessages();
       setDeleteDialogOpen(false);
     } catch (error) {
-      console.error('Error deleting message:', error);
       setSnackbar({
         open: true,
         message: 'Failed to delete message',

@@ -109,7 +109,12 @@ const EventForm = () => {
           }
           
         } catch (error) {
-          console.error('Error fetching event:', error);
+          console.error('Error details:', {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+          });
           setSubmitStatus({
             type: 'error',
             message: 'Failed to load event data. Please try again.'
@@ -249,7 +254,12 @@ const EventForm = () => {
       }, 1500);
       
     } catch (error) {
-      console.error('Error saving event:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
       
       const errorMessage = error.response?.data?.message || 'Failed to save event. Please try again.';
       setSubmitStatus({
@@ -283,7 +293,12 @@ const EventForm = () => {
       }));
       
     } catch (error) {
-      console.error('Error sending notifications:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
       
       const errorMessage = error.response?.data?.message || 'Failed to send notifications. Please try again.';
       setSubmitStatus({

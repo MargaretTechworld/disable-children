@@ -60,13 +60,11 @@ const ChatWidget = ({ user }) => {
       socketHandlers.current = {
         initialized: true,
         onConnect: () => {
-          console.log('Connected to chat server');
         },
         onConnectError: (err) => {
           console.error('Socket connection error:', err.message);
         },
         onMessage: (message) => {
-          console.log('Received message from server:', message);
           setMessages(prev => {
             // Create a unique ID for the message if it doesn't have one
             const messageWithId = {
@@ -86,7 +84,6 @@ const ChatWidget = ({ user }) => {
           });
         },
         onReconnectAttempt: (attempt) => {
-          console.log(`Reconnection attempt: ${attempt}`);
         },
         onReconnectError: (error) => {
           console.error('Reconnection error:', error);

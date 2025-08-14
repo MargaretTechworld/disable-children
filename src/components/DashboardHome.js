@@ -10,17 +10,11 @@ const DashboardHome = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Log for debugging
-    console.log('DashboardHome - User:', user);
-    console.log('DashboardHome - Loading:', loading);
-    console.log('DashboardHome - Error:', error);
-    
     // Redirect if no user is logged in
     if (!loading && !user) {
-      console.log('No user found, redirecting to login');
       navigate('/login');
     }
-  }, [user, loading, error, navigate]);
+  }, [user, loading, navigate]);
 
   if (loading) {
     return (
@@ -32,6 +26,7 @@ const DashboardHome = () => {
   }
 
   if (error) {
+    console.error('Error details:', error);
     return (
       <div className="error-container">
         <div className="alert alert-danger">

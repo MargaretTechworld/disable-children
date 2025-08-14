@@ -8,15 +8,11 @@ import {
   searchOutline, 
   closeCircleOutline,
   refreshOutline,
-  addOutline,
-  filterOutline,
   alertCircleOutline,
-  chevronForwardOutline,
-  chevronBackOutline
 } from 'ionicons/icons';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
-import { format, parseISO, differenceInYears } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 // Styles
 import '../styles/ManageChildrenView.css';
@@ -329,7 +325,13 @@ const ManageChildrenView = () => {
       setError('');
       return processedData;
     } catch (err) {
-      console.error('Error fetching children:', err);
+      console.error('Error details:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      });
+      
       let errorMessage = 'Failed to fetch children data. ';
       
       if (err.code === 'ECONNABORTED') {
@@ -543,8 +545,13 @@ const ManageChildrenView = () => {
       setChildren(children.filter(c => c.id !== selectedChild.id));
       handleCloseModals(); // Only close on success
     } catch (err) {
+      console.error('Error details:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      });
       setError('Failed to delete child record. Please try again.');
-      console.error(err);
     }
   };
 
@@ -562,19 +569,16 @@ const ManageChildrenView = () => {
       // Ensure URL has a trailing slash
       const url = `http://localhost:5000/api/children/${selectedChild.id}/`.replace(/([^:]\/)\/+/g, '$1');
       
-      console.log('Sending update to:', url);
-      console.log('Update data:', updatedData);
-      
       const res = await axios.put(url, updatedData, config);
       
-      console.log('Update response:', res.data);
       setChildren(children.map(c => (c.id === selectedChild.id ? res.data : c)));
       handleCloseModals();
     } catch (err) {
-      console.error('Update error:', {
+      console.error('Error details:', {
         message: err.message,
-        response: err.response?.data,
-        status: err.response?.status
+        status: err.response?.status,
+        data: err.response?.data,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
       });
       setError('Failed to update child record. Please try again.');
     }
@@ -680,7 +684,7 @@ const ManageChildrenView = () => {
                 row[field.label] = date.toLocaleDateString();
               }
             } catch (e) {
-              console.warn(`Error formatting date for ${field.id}:`, e);
+              console.error(`Error formatting date for ${field.id}:`, e);
             }
           }
           
@@ -714,7 +718,10 @@ const ManageChildrenView = () => {
       // Generate file and trigger download
       XLSX.writeFile(wb, fileName);
     } catch (err) {
-      console.error('Error exporting to Excel:', err);
+      console.error('Error details:', {
+        message: err.message,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      });
       setError('Failed to export data. Please try again.');
     } finally {
       setExporting(false);

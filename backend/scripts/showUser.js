@@ -5,7 +5,7 @@ const { sequelize } = require('../models');
 const logger = {
   info: (message, data = {}) => {
     console.info('Script Info:', {
-      script: 'getUserPassword',
+      script: 'showUser',
       message,
       ...data,
       timestamp: new Date().toISOString()
@@ -14,7 +14,7 @@ const logger = {
   debug: (message, data = {}) => {
     if (process.env.NODE_ENV === 'development') {
       console.debug('Script Debug:', {
-        script: 'getUserPassword',
+        script: 'showUser',
         message,
         ...data,
         timestamp: new Date().toISOString()
@@ -23,7 +23,7 @@ const logger = {
   },
   error: (message, error, data = {}) => {
     console.error('Script Error:', {
-      script: 'getUserPassword',
+      script: 'showUser',
       message,
       error: error?.message || error,
       stack: error?.stack,
@@ -40,7 +40,7 @@ const logger = {
   },
   warn: (message, data = {}) => {
     console.warn('Script Warning:', {
-      script: 'getUserPassword',
+      script: 'showUser',
       message,
       ...data,
       timestamp: new Date().toISOString()
@@ -48,59 +48,67 @@ const logger = {
   }
 };
 
-async function getUserPassword(email) {
+async function showUser(email) {
   try {
-    logger.info('Starting to get user password hash', {
-      operation: 'get-user-password',
+    logger.info('Starting to show user', {
+      operation: 'show-user',
       targetEmail: email
     });
-    
+
     await sequelize.authenticate();
     logger.info('Database connection established');
-    
+
     const user = await User.scope('withPassword').findOne({
       where: { email },
-      raw: true
+      attributes: { exclude: ['password'] } // Don't log the actual password
     });
-    
-    logger.info(`Looking up user`, { email });
-    
+
     if (!user) {
       logger.warn('User not found', { email });
       return;
     }
-    
-    logger.info('Found user password hash', {
-      userId: user.id,
-      email: user.email,
-      passwordHash: user.password ? `${user.password.substring(0, 10)}...` : 'null',
-      passwordLength: user.password ? user.password.length : 0
-    });
-    
-    logger.table([{
+
+    const userData = {
       id: user.id,
       email: user.email,
-      hasPassword: !!user.password,
-      passwordHash: user.password ? '***' : 'none',
+      firstName: user.firstName,
+      lastName: user.lastName,
       role: user.role,
       isActive: user.isActive,
-      lastLogin: user.lastLogin
-    }], ['id', 'email', 'hasPassword', 'passwordHash', 'role', 'isActive', 'lastLogin']);
-    
+      lastLogin: user.lastLogin || 'Never',
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
+
+    logger.info('User details retrieved', {
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    });
+
+    logger.table([userData], ['id', 'email', 'firstName', 'lastName', 'role', 'isActive', 'lastLogin']);
+
   } catch (error) {
-    logger.error('Failed to get user password', error, {
-      step: 'get-user-password',
+    logger.error('Failed to retrieve user', error, {
+      step: 'show-user',
       email
     });
   } finally {
     await sequelize.close();
-    logger.info('Get user password operation completed', {
+    logger.info('Show user operation completed', {
       status: 'completed',
       timestamp: new Date().toISOString()
     });
   }
 }
 
-// Get email from command line argument or use default
-const email = process.argv[2] || 'margarettechwld@gmail.com';
-getUserPassword(email);
+// Get email from command line arguments
+const email = process.argv[2];
+if (!email) {
+  logger.error('Email address is required', {
+    step: 'argument-validation'
+  });
+  process.exit(1);
+}
+
+showUser(email);

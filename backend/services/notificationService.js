@@ -14,6 +14,42 @@ const emailLimiter = new RateLimiter({
 const parentDisabilityCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+// Logger utility for consistent logging
+const logger = {
+  debug: (message, data = {}) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Notification Service Debug:', {
+        message,
+        ...data,
+        timestamp: new Date().toISOString()
+      });
+    }
+  },
+  info: (message, data = {}) => {
+    console.info('Notification Service Info:', {
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  warn: (message, data = {}) => {
+    console.warn('Notification Service Warning:', {
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  error: (message, error, data = {}) => {
+    console.error('Notification Service Error:', {
+      message,
+      error: error?.message || error,
+      stack: error?.stack,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
 class NotificationService {
   /**
    * Get or fetch parent's children disabilities
@@ -46,7 +82,9 @@ class NotificationService {
    */
   static async findParentsByChildrenDisabilities(targetDisabilities) {
     try {
-      console.log('Searching for parents with children having disabilities:', targetDisabilities);
+      logger.debug('Searching for parents with children having disabilities', { 
+        targetDisabilities 
+      });
       
       // Convert target disabilities to lowercase for case-insensitive comparison
       const targetDisabilitiesLower = targetDisabilities.map(d => d?.toLowerCase().trim());
@@ -65,7 +103,10 @@ class NotificationService {
         raw: true
       });
 
-      console.log(`Found ${children.length} children matching target disabilities`);
+      logger.debug(`Found ${children.length} children matching target disabilities`, {
+        childrenCount: children.length,
+        targetDisabilities
+      });
       
       // Group by email to get unique parents
       const parentMap = new Map();
@@ -92,10 +133,16 @@ class NotificationService {
         disabilities: Array.from(parent.disabilities)
       }));
 
-      console.log(`Found ${parents.length} unique parents to notify`);
+      logger.info(`Found ${parents.length} unique parents to notify`, {
+        parentCount: parents.length,
+        childrenCount: children.length
+      });
+
       return parents;
     } catch (error) {
-      console.error('Error finding parents by children disabilities:', error);
+      logger.error('Error finding parents by children disabilities', error, {
+        targetDisabilities
+      });
       throw error;
     }
   }
@@ -126,7 +173,10 @@ class NotificationService {
       return notifications;
     } catch (error) {
       await transaction.rollback();
-      console.error('Error creating notifications:', error);
+      logger.error('Error creating notifications', error, {
+        eventId: event.id,
+        parentCount: parents.length
+      });
       throw error;
     }
   }
@@ -172,7 +222,10 @@ class NotificationService {
 
       return { success: true, messageId };
     } catch (error) {
-      console.error(`Failed to send notification to ${parent.email}:`, error);
+      logger.error(`Failed to send notification to ${parent.email}`, error, {
+        notificationId: notification.id,
+        recipientId: parent.id
+      });
       
       await notification.update({
         status: 'failed',
@@ -295,7 +348,9 @@ class NotificationService {
         stats: results
       };
     } catch (error) {
-      console.error('Error processing event notifications:', error);
+      logger.error('Error processing event notifications', error, {
+        eventId
+      });
       
       // Update event with cancelled status due to error
       await event.update({
@@ -436,12 +491,14 @@ class NotificationService {
    */
   static async getParentCountByDisabilities(disabilityTypes = []) {
     try {
-      console.log('=== Starting getParentCountByDisabilities ===');
-      console.log('Input disabilityTypes:', disabilityTypes);
-      
+      logger.debug('Starting getParentCountByDisabilities', {
+        disabilityTypes,
+        disabilityCount: disabilityTypes?.length || 0
+      });
+
       // If no disabilities provided, count all unique parent emails
       if (!disabilityTypes || disabilityTypes.length === 0) {
-        console.log('No disability types provided, counting all unique parent emails');
+        logger.debug('No disability types provided, counting all unique parent emails');
         const count = await Child.count({
           distinct: true,
           col: 'email',
@@ -452,13 +509,18 @@ class NotificationService {
             }
           }
         });
-        console.log('Total unique parent emails:', count);
+        logger.debug('Counted unique parent emails', {
+          count,
+          hasDisabilityFilter: false
+        });
         return count;
       }
 
-      console.log('Getting parents with children matching disabilities:', disabilityTypes);
-      
       // Find all unique parent emails for children with the specified disabilities
+      logger.debug('Filtering parents by children disabilities', {
+        disabilityTypes,
+        disabilityCount: disabilityTypes?.length || 0
+      });
       const parents = await Child.findAll({
         attributes: ['email'],
         where: {
@@ -475,16 +537,23 @@ class NotificationService {
         raw: true
       });
       
-      console.log('Parents found with matching children:', parents);
-      
+      logger.debug('Parents found with matching children', {
+        parentCount: parents.length,
+        sampleEmails: parents.slice(0, 3).map(p => p.email) // Log first 3 emails as sample
+      });
+
       // Get unique emails
       const uniqueEmails = [...new Set(parents.map(p => p.email))];
-      console.log('Unique parent emails:', uniqueEmails);
-      
+      logger.debug('Unique parent emails processed', {
+        uniqueEmailCount: uniqueEmails.length,
+        sampleEmails: uniqueEmails.slice(0, 3) // Log first 3 emails as sample
+      });
       return uniqueEmails.length;
       
     } catch (error) {
-      console.error('Error in getParentCountByDisabilities:', error);
+      logger.error('Error in getParentCountByDisabilities', error, {
+        disabilityTypes
+      });
       throw error;
     }
   }
@@ -500,14 +569,17 @@ class NotificationService {
    */
   static async sendMessageToAllParents({ subject, message, senderId, disabilityTypes = [] }) {
     try {
-      console.log(`Sending message to parents with disabilities:`, disabilityTypes);
-      
       let parents = [];
       let recipientGroup = 'All Parents';
       
       // If specific disabilities are provided, filter parents by those disabilities
       if (disabilityTypes && disabilityTypes.length > 0) {
         // Get unique parents with children matching the specified disabilities
+        logger.info('Sending message to parents with disabilities', {
+          disabilityTypes,
+          disabilityCount: disabilityTypes?.length || 0,
+          senderId
+        });
         const children = await Child.findAll({
           where: {
             disabilityType: {
@@ -540,6 +612,9 @@ class NotificationService {
         recipientGroup = `Parents of children with: ${disabilityTypes.join(', ')}`;
       } else {
         // Get all parents if no disability filter
+        logger.info('Sending message to all parents', {
+          senderId
+        });
         const childrenWithEmails = await Child.findAll({
           where: { 
             email: { [Op.ne]: null } // Only include children with email
@@ -568,7 +643,11 @@ class NotificationService {
       }
       
       if (parents.length === 0) {
-        console.warn('No parents found matching the criteria');
+        logger.warn('No parents found matching the criteria', {
+          disabilityTypes,
+          disabilityCount: disabilityTypes?.length || 0,
+          senderId
+        });
         return {
           success: false,
           message: 'No parents found matching the specified criteria',
@@ -581,7 +660,11 @@ class NotificationService {
         };
       }
       
-      console.log(`Sending message to ${parents.length} parents`);
+      logger.info(`Sending message to ${parents.length} parents`, {
+        parentCount: parents.length,
+        disabilityTypes,
+        senderId
+      });
       
       // Generate a unique message ID for this batch
       const batchMessageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -650,7 +733,12 @@ class NotificationService {
       };
       
     } catch (error) {
-      console.error('Error in sendMessageToAllParents:', error);
+      logger.error('Error in sendMessageToAllParents', error, {
+        subject,
+        message,
+        senderId,
+        disabilityTypes
+      });
       return {
         success: false,
         message: 'Failed to send message',

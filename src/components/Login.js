@@ -70,7 +70,12 @@ const Login = () => {
       }
     } catch (error) {
       if (!isMounted.current) return;
-      console.error('Login error:', error);
+      console.error('Login error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
       setLocalError(error.response?.data?.message || 'An unexpected error occurred. Please try again.');
     } finally {
       if (isMounted.current) {

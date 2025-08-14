@@ -26,7 +26,6 @@ const api = axios.create({
 
 const UserManagement = () => {
   const { user } = useAuth();
-  console.log('UserManagement - Current user:', user);
   
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,23 +74,17 @@ const UserManagement = () => {
   // Effect to handle user authentication and data fetching
   useEffect(() => {
     if (!user) {
-      console.error('UserManagement: No authenticated user found');
       setError('User information not available. Please log in again.');
       setLoading(false);
       return;
     }
 
-    console.log('UserManagement - User role:', user.role);
-    
     if (user.role === 'super_admin') {
-      console.log('User is super_admin, fetching users...');
       fetchUsers().catch(error => {
-        console.error('Error in fetchUsers:', error);
         setError(error.message || 'Failed to load users');
         setLoading(false);
       });
     } else {
-      console.log('User does not have permission to view this page');
       setError('You do not have permission to view this page');
       setLoading(false);
     }
@@ -107,22 +100,19 @@ const UserManagement = () => {
         throw new Error('No authentication token found. Please log in again.');
       }
       
-      console.log('Fetching users...');
       const response = await api.get('/users');
-      
-      console.log('Users API response:', response);
       
       if (response.data && Array.isArray(response.data)) {
         setUsers(response.data);
       } else {
-        console.error('Unexpected response format:', response.data);
         setError('Invalid data format received from server');
       }
     } catch (err) {
-      console.error('Error fetching users:', {
+      console.error('Error details:', {
         message: err.message,
-        response: err.response?.data,
-        status: err.response?.status
+        status: err.response?.status,
+        data: err.response?.data,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
       });
       
       if (err.response?.status === 403) {
@@ -145,14 +135,18 @@ const UserManagement = () => {
         setSuccess('User deleted successfully');
         fetchUsers();
       } catch (err) {
+        console.error('Error details:', {
+          message: err.message,
+          status: err.response?.status,
+          data: err.response?.data,
+          stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        });
         setError(err.response?.data?.msg || 'Failed to delete user');
       }
     }
   };
 
   const handleEdit = (userId) => {
-    console.log('Navigating to edit user:', userId);
-    // Use an absolute path to ensure consistent navigation
     navigate(`/dashboard/users/${userId}/edit`, { replace: true });
   };
 
@@ -172,7 +166,12 @@ const UserManagement = () => {
           throw new Error(response.data.message || 'Failed to reset password');
         }
       } catch (err) {
-        console.error('Error resetting password:', err);
+        console.error('Error details:', {
+          message: err.message,
+          status: err.response?.status,
+          data: err.response?.data,
+          stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        });
         setError(err.response?.data?.message || err.message || 'Failed to reset password');
       } finally {
         setIsResetting(false);

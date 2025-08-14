@@ -2,10 +2,34 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
-console.log('Email Service - Environment:', {
-  GMAIL_USER: process.env.GMAIL_USER ? '***' : 'NOT SET',
-  NODE_ENV: process.env.NODE_ENV
-});
+// Logger utility for consistent logging
+const logger = {
+  debug: (message, data = {}) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Email Service Debug:', {
+        message,
+        ...data,
+        timestamp: new Date().toISOString()
+      });
+    }
+  },
+  info: (message, data = {}) => {
+    console.info('Email Service Info:', {
+      message,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  },
+  error: (message, error, data = {}) => {
+    console.error('Email Service Error:', {
+      message,
+      error: error?.message || error,
+      stack: error?.stack,
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
 
 // Gmail SMTP configuration
 const getGmailConfig = () => {
@@ -33,10 +57,10 @@ let transporter;
 const createTransporter = () => {
   try {
     const mailConfig = getGmailConfig();
-    console.log('Creating Gmail SMTP transporter');
+    logger.debug('Initializing SMTP transporter');
     return nodemailer.createTransport(mailConfig);
   } catch (error) {
-    console.error('Error creating email transporter:', error);
+    logger.error('Failed to create email transporter', error);
     throw error;
   }
 };
@@ -47,7 +71,7 @@ transporter = createTransporter();
 // Function to ensure transporter is ready
 const getTransporter = async () => {
   if (!transporter) {
-    console.log('Transporter not ready, initializing...');
+    logger.debug('Transporter not ready, initializing...');
     transporter = createTransporter();
   }
   return transporter;
@@ -60,8 +84,10 @@ exports.sendPasswordResetEmail = async (email, resetToken) => {
     const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
     const fromEmail = 'kidsdisable@gmail.com';
     
-    console.log(`Sending password reset email to: ${email}`);
-    console.log(`Reset link: ${resetLink}`);
+    logger.info('Sending password reset email', { 
+      email,
+      resetLink: resetLink ? '***' : 'Not set' 
+    });
     
     const mailOptions = {
       from: `"Disable Children App" <${fromEmail}>`,
@@ -91,10 +117,14 @@ exports.sendPasswordResetEmail = async (email, resetToken) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('Password reset email sent:', info.messageId);
+    logger.info('Email sent successfully', { 
+      messageId: info.messageId,
+      to: mailOptions.to,
+      subject: mailOptions.subject
+    });
     return info;
   } catch (error) {
-    console.error('Error sending password reset email:', error);
+    logger.error('Failed to send password reset email', error, { to: email });
     throw error;
   }
 };
@@ -113,12 +143,20 @@ const sendEmail = async ({ to, subject, html, text }) => {
       html
     };
 
-    console.log(`Sending email to: ${to}`);
+    logger.debug('Sending email', { 
+      to,
+      subject: mailOptions.subject 
+    });
+
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent:', info.messageId);
+    logger.info('Email sent successfully', { 
+      messageId: info.messageId,
+      to: mailOptions.to,
+      subject: mailOptions.subject
+    });
     return info;
   } catch (error) {
-    console.error('Error sending email:', error);
+    logger.error('Failed to send email', error, { to: mailOptions.to });
     throw error;
   }
 };
@@ -143,7 +181,7 @@ exports.sendNewPasswordEmail = async (email, newPassword) => {
 
     return await sendEmail({ to: email, subject, html });
   } catch (error) {
-    console.error('Error sending new password email:', error);
+    logger.error('Failed to send new password email', error, { to: email });
     throw error;
   }
 };
