@@ -127,14 +127,14 @@ const Sidebar = ({ user, isOpen, onClose, onLogout, isMobile }) => {
     if (!user) return 'User';
     
     // Check different possible name properties
-    if (user.name) return user.name;
-    if (user.username) return user.username;
-    if (user.firstName || user.lastName) {
-      return [user.firstName, user.lastName].filter(Boolean).join(' ');
-    }
-    if (user.email) return user.email.split('@')[0];
+    if (user.role) return user.role;
+    // if (user.username) return user.username;
+    // if (user.firstName || user.lastName) {
+    //   return [user.firstName, user.lastName].filter(Boolean).join(' ');
+    // }
+    // if (user.email) return user.email.split('@')[0];
     
-    return 'User';
+    // return 'User';
   };
 
   // Function to get user initials for avatar
