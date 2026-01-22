@@ -19,11 +19,13 @@
 .welcome-content h1 {
     font-size: 3rem;
     margin-bottom: 1rem;
+    color: white;
 }
 
 .welcome-content p {
     font-size: 1.25rem;
     margin-bottom: 2rem;
+    color: white;
 }
 
 .welcome-content button {
